@@ -267,25 +267,28 @@ export default function Dashboard() {
                     >
                         <motion.p
                             className="text-sm text-white"
-                            animate={{ opacity: [1, 0.7, 1] }} // pulsate opacity
-                            transition={{ duration: 1, ease: "easeInOut", repeat: Infinity }}
+                            animate={{ opacity: [1, 0.7, 1] }}
+                            transition={{ duration: 1, ease: "easeInOut", repeat: Infinity, repeatType: "loop", delay: 0 }}
                         >
                             Filtered Total
                         </motion.p>
+
                         <motion.p
                             className="font-bold text-xl text-white"
                             animate={{ opacity: [1, 0.7, 1] }}
-                            transition={{ duration: 2, ease: "easeInOut", repeat: Infinity }}
+                            transition={{ duration: 1, ease: "easeInOut", repeat: Infinity, repeatType: "loop", delay: 0.2 }}
                         >
                             ₹{filteredTotal}
                         </motion.p>
+
                         <motion.p
                             className="text-xs text-white"
                             animate={{ opacity: [1, 0.7, 1] }}
-                            transition={{ duration: 2, ease: "easeInOut", repeat: Infinity }}
+                            transition={{ duration: 1, ease: "easeInOut", repeat: Infinity, repeatType: "loop", delay: 0.4 }}
                         >
                             {filteredCount} transaction(s)
                         </motion.p>
+
                     </motion.div>
 
 
