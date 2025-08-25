@@ -407,7 +407,7 @@ export default function Dashboard() {
                         className="px-4 py-2 w-38 bg-gray-600 hover:bg-gray-500 rounded-lg text-white cursor-pointer 
                    transition focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     >
-                        Reset
+                        Reset Filters
                     </button>
 
                     {/* Add Spending */}
