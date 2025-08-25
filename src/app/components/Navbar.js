@@ -20,6 +20,7 @@ export default function Navbar() {
         }
     };
 
+
     return (
         <motion.div
             initial={{ y: -80, opacity: 0 }}
@@ -29,7 +30,7 @@ export default function Navbar() {
         >
             <div className="flex items-center gap-4">
                 <img
-                    src={user?.photoURL || "/default.png"}
+                    src={user?.photoURL ?? "/stock.jpg"}
                     alt="Profile"
                     className="w-10 h-10 rounded-full border-2 border-gray-700"
                 />
