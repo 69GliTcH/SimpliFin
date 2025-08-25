@@ -11,10 +11,12 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function LoginPage() {
     const router = useRouter();
     const [activeIndex, setActiveIndex] = useState(0);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false); // track login progress
+    const [user, setUser] = useState(null); // track Firebase auth state
 
     const points = ["Track", "Journal", "Analyze"];
 
+    // Animate key points
     useEffect(() => {
         const interval = setInterval(() => {
             setActiveIndex((prev) => (prev + 1) % points.length);
@@ -22,17 +24,33 @@ export default function LoginPage() {
         return () => clearInterval(interval);
     }, []);
 
+    // Listen for auth state changes
+    useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
+            if (firebaseUser) {
+                setUser(firebaseUser);
+                router.push("/dashboard"); // redirect if already logged in
+            } else {
+                setUser(null);
+            }
+        });
+        return () => unsubscribe();
+    }, [router]);
+
+    // Handle Google login
     const handleGoogleLogin = async () => {
+        if (loading) return; // prevent multiple popups
         setLoading(true);
         try {
             const result = await signInWithPopup(auth, googleProvider);
-            const user = result.user;
+            const firebaseUser = result.user;
 
+            // Save user info in Firestore
             await setDoc(
-                doc(db, "users", user.uid),
+                doc(db, "users", firebaseUser.uid),
                 {
-                    name: user.displayName,
-                    email: user.email,
+                    name: firebaseUser.displayName,
+                    email: firebaseUser.email,
                     lastLogin: serverTimestamp(),
                 },
                 { merge: true }
@@ -42,6 +60,7 @@ export default function LoginPage() {
         } catch (error) {
             console.error("Login error:", error.message);
             alert("Failed to login. Try again.");
+        } finally {
             setLoading(false);
         }
     };
@@ -69,18 +88,21 @@ export default function LoginPage() {
             </div>
 
             <p className="text-gray-400 text-center max-w-md mx-auto mb-8">
-                SimplyFin helps you keep track of your daily expenses and manage your finances easily.<br />
-                Analyze your spending patterns, stay on top of your budget, and make smarter financial decisions.
+                SimplyFin helps you keep track of your daily expenses and manage your
+                finances easily.<br />
+                Analyze your spending patterns, stay on top of your budget, and make
+                smarter financial decisions.
             </p>
 
+            {/* Google Login Button */}
             <button
                 onClick={handleGoogleLogin}
                 disabled={loading}
-                className={`flex items-center justify-center gap-3 px-6 py-3 bg-white text-gray-900 rounded-lg 
-                            hover:bg-gray-100 transition text-lg shadow-md cursor-pointer ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg transition text-lg shadow-md cursor-pointer ${loading ? "bg-gray-500 text-gray-300" : "bg-white text-gray-900 hover:bg-gray-100"
+                    }`}
             >
                 {loading ? (
-                    <span className="animate-pulse">Loading...</span>
+                    <span>Logging in...</span>
                 ) : (
                     <>
                         <GoogleLogo size={24} weight="fill" />
