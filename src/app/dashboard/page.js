@@ -254,9 +254,9 @@ export default function Dashboard() {
                         className="rounded-xl p-4 shadow-md cursor-pointer w-full bg-green-600"
                         animate={{
                             backgroundColor: [
-                                "#01a34a", // Tailwind green-600
-                                "#60a34a", // lighter green
-                                "#16a34a", // back to normal
+                                "#01a36a", // Tailwind green-600
+                                "#01a36a", // lighter green
+                                "#01a36a", // back to normal
                             ],
                         }}
                         transition={{
@@ -268,7 +268,7 @@ export default function Dashboard() {
                         <motion.p
                             className="text-sm text-white"
                             animate={{ opacity: [1, 0.7, 1] }} // pulsate opacity
-                            transition={{ duration: 2, ease: "easeInOut", repeat: Infinity }}
+                            transition={{ duration: 1, ease: "easeInOut", repeat: Infinity }}
                         >
                             Filtered Total
                         </motion.p>
