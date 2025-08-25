@@ -1,10 +1,9 @@
 "use client";
 
-import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
 import AddSpendingModal from "../components/AddSpendingModal";
-import { db } from "../../lib/firebase";
+import { db, auth } from "../../lib/firebase";
 import {
     collection,
     addDoc,
@@ -40,24 +39,63 @@ const categoryIcons = {
 };
 
 export default function Dashboard() {
-    const { user } = useAuth();
     const router = useRouter();
+
+    const [user, setUserLocal] = useState(null); // local state for user
     const [spendings, setSpendings] = useState([]);
     const [open, setOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [dateRange, setDateRange] = useState({ start: null, end: null });
     const [categoryFilter, setCategoryFilter] = useState("");
     const [showDatePicker, setShowDatePicker] = useState(false);
-
+    const [showCategory, setShowCategory] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+    const [pressedCards, setPressedCards] = useState({});
+    const [deleteClickedCards, setDeleteClickedCards] = useState({});
 
     const datePickerRef = useRef(null);
+    const categoryRef = useRef(null);
 
-    // Redirect if not logged in
+    // Listen to auth state for redirect
     useEffect(() => {
-        if (user === null) router.push("/login");
-    }, [user, router]);
+        const unsubscribeAuth = auth.onAuthStateChanged((firebaseUser) => {
+            if (firebaseUser) {
+                setUserLocal(firebaseUser);
+            } else {
+                setSpendings([]); // Clear spendings
+                router.push("/login");
+            }
+        });
+        return () => unsubscribeAuth();
+    }, [router]);
+
+    // Fetch spendings with cleanup to prevent permission errors
+    useEffect(() => {
+        if (!user) return;
+
+        const q = query(collection(db, "users", user.uid, "spendings"));
+        const unsubscribeFirestore = onSnapshot(
+            q,
+            (snapshot) => {
+                const data = snapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+                setSpendings(data);
+            },
+            (error) => {
+                if (error.code === "permission-denied") {
+                    console.warn("Firestore permission denied, possibly logged out.");
+                    setSpendings([]);
+                } else {
+                    console.error(error);
+                }
+            }
+        );
+
+        return () => unsubscribeFirestore();
+    }, [user]);
 
     // Close datepicker when clicking outside
     useEffect(() => {
@@ -71,20 +109,6 @@ export default function Dashboard() {
         }
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [showDatePicker]);
-
-    // Fetch spendings
-    useEffect(() => {
-        if (!user) return;
-        const q = query(collection(db, "users", user.uid, "spendings"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-            }));
-            setSpendings(data);
-        });
-        return () => unsubscribe();
-    }, [user]);
 
     const addSpending = async (amount, category, name) => {
         if (!user) return;
@@ -104,10 +128,9 @@ export default function Dashboard() {
     const confirmDelete = (spending) => setDeleteTarget(spending);
 
     const handleDelete = async () => {
+        if (!user || !deleteTarget) return;
         try {
-            await deleteDoc(
-                doc(db, "users", user.uid, "spendings", deleteTarget.id)
-            );
+            await deleteDoc(doc(db, "users", user.uid, "spendings", deleteTarget.id));
             toast.success("Deleted!");
             setDeleteTarget(null);
         } catch {
@@ -115,6 +138,7 @@ export default function Dashboard() {
         }
     };
 
+    // Filters
     const filteredSpendings = spendings.filter((s) => {
         let dateMatch = true;
         if (dateRange.start && dateRange.end) {
@@ -128,7 +152,7 @@ export default function Dashboard() {
         return dateMatch && categoryMatch;
     });
 
-    // Pagination logic
+    // Pagination
     const totalPages = Math.ceil(filteredSpendings.length / itemsPerPage);
     const currentItems = filteredSpendings.slice(
         (currentPage - 1) * itemsPerPage,
@@ -154,10 +178,6 @@ export default function Dashboard() {
         const created = s.createdAt?.toDate ? s.createdAt.toDate() : new Date(s.createdAt);
         return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
     });
-    const categoryRef = useRef(null);
-    const [showCategory, setShowCategory] = useState(false);
-    const [pressedCards, setPressedCards] = useState({});
-    const [deleteClickedCards, setDeleteClickedCards] = useState({});
 
     return (
         <div className="min-h-screen bg-gray-900 text-gray-100">
