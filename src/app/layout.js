@@ -2,7 +2,7 @@ import "./globals.css";
 import { AuthProvider } from "./context/AuthContext";
 
 export const metadata = {
-  title: "SimpliFin",
+  title: "SimplyFin",
   description: "Track your expenses with ease.",
 };
 
