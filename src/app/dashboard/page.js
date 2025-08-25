@@ -226,14 +226,14 @@ export default function Dashboard() {
 
 
                 {/* Filters & Add */}
-                <div className="flex flex-wrap justify-center gap-4 mt-4">
-                    {/* Date Picker */}
-                    <div className="w-54 sm:w-54 order-1 sm:order-1">
+                <div className="flex justify-center gap-4 flex-wrap mt-4">
+                    {/* Date Range Picker */}
+                    <div className="relative" ref={datePickerRef}>
                         <button
                             onClick={() => setShowDatePicker((prev) => !prev)}
-                            className="flex items-center justify-between w-full px-4 py-2 bg-gray-800 
-                 hover:bg-gray-700 rounded-lg cursor-pointer text-white 
-                 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            className="flex items-center justify-between gap-2 w-54 px-4 py-2 bg-gray-800 
+                       hover:bg-gray-700 rounded-lg cursor-pointer text-white 
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         >
                             <span className="truncate">
                                 {dateRange.start && dateRange.end
@@ -241,7 +241,8 @@ export default function Dashboard() {
                                     : "Select Date Range"}
                             </span>
                             <svg
-                                className={`w-4 h-4 transition-transform duration-200 ${showDatePicker ? "rotate-180" : ""}`}
+                                className={`w-4 h-4 transition-transform duration-200 ${showDatePicker ? "rotate-180" : ""
+                                    }`}
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -249,52 +250,103 @@ export default function Dashboard() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
+                        {showDatePicker && (
+                            <div className="absolute mt-2 z-50 bg-gray-900 p-3 rounded-lg shadow-lg">
+                                <DatePicker
+                                    selected={dateRange.start}
+                                    onChange={(dates) => {
+                                        const [start, end] = dates;
+                                        setDateRange({ start, end });
+                                        if (start && end) setShowDatePicker(false);
+                                    }}
+                                    startDate={dateRange.start}
+                                    endDate={dateRange.end}
+                                    selectsRange
+                                    inline
+                                />
+                            </div>
+                        )}
                     </div>
 
-                    {/* Reset */}
+                    {/* Category Filter (custom dropdown like date range) */}
+                    <div className="relative" ref={categoryRef}>
+                        <button
+                            onClick={() => setShowCategory((prev) => !prev)}
+                            className="flex items-center justify-between w-54 px-4 py-2 bg-gray-800 
+                       hover:bg-gray-700 rounded-lg cursor-pointer text-white 
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        >
+                            <span className="truncate">
+                                {categoryFilter ? categoryFilter : "All Categories"}
+                            </span>
+                            <svg
+                                className={`w-4 h-4 transition-transform duration-200 ${showCategory ? "rotate-180" : ""
+                                    }`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <AnimatePresence>
+                            {showCategory && (
+                                <motion.ul
+                                    initial={{ opacity: 0, y: -5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -5 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="absolute left-0 mt-2 w-40 bg-gray-500 rounded-lg shadow-lg z-50"
+                                >
+                                    <li
+                                        className="px-3 py-2 hover:bg-gray-700 rounded cursor-pointer text-white"
+                                        onClick={() => {
+                                            setCategoryFilter("");
+                                            setShowCategory(false);
+                                        }}
+                                    >
+                                        All Categories
+                                    </li>
+                                    {Object.keys(categoryIcons).map((c) => (
+                                        <li
+                                            key={c}
+                                            className="px-3 py-2 hover:bg-gray-700 rounded cursor-pointer text-white"
+                                            onClick={() => {
+                                                setCategoryFilter(c);
+                                                setShowCategory(false);
+                                            }}
+                                        >
+                                            {c}
+                                        </li>
+                                    ))}
+                                </motion.ul>
+                            )}
+                        </AnimatePresence>
+
+                    </div>
+
+                    {/* Reset Filters */}
                     <button
                         onClick={() => {
                             setCategoryFilter("");
                             setDateRange({ start: null, end: null });
                             toast.info("Filters reset!");
                         }}
-                        className="w-full sm:w-auto order-3 sm:order-3 px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-white cursor-pointer 
-               transition focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        className="px-4 py-2 w-38 bg-gray-600 hover:bg-gray-500 rounded-lg text-white cursor-pointer 
+                   transition focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     >
                         Reset
                     </button>
 
-                    {/* Category Filter */}
-                    <div className="w-54 sm:w-40 order-2 sm:order-3">
-                        <button
-                            onClick={() => setShowCategory((prev) => !prev)}
-                            className="flex items-center justify-between w-full px-4 py-2 bg-gray-800 
-                 hover:bg-gray-700 rounded-lg cursor-pointer text-white 
-                 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                        >
-                            <span className="truncate">{categoryFilter ? categoryFilter : "All Categories"}</span>
-                            <svg
-                                className={`w-4 h-4 transition-transform duration-200 ${showCategory ? "rotate-180" : ""}`}
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                    </div>
-
                     {/* Add Spending */}
                     <button
                         onClick={() => setOpen(true)}
-                        className="w-full sm:w-auto order-4 sm:order-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white cursor-pointer 
-               transition focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        className="px-4 py-2 w-38 bg-blue-600 hover:bg-blue-700 rounded-lg text-white cursor-pointer 
+                   transition focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     >
                         + Add Spending
                     </button>
                 </div>
-
-
 
 
 
@@ -509,7 +561,7 @@ export default function Dashboard() {
             </AnimatePresence>
             <footer className="w-full py-6 bg-gray-900 text-center">
                 <p className="text-gray-500 text-sm">
-                    &copy; 2025 SimpliFin.<br />
+                    &copy; 2025 SimplyFin.<br />
                     Developer&apos;s Credit: <span className="font-semibold">Saksham Verma</span>.<br />
                     All rights reserved.
                 </p>
