@@ -367,95 +367,111 @@ export default function Dashboard() {
                         </thead>
                         <tbody>
                             <AnimatePresence>
-                                {currentItems.map((s, idx) => {
-                                    const created = s.createdAt?.toDate ? s.createdAt.toDate() : new Date(s.createdAt);
-                                    return (
-                                        <motion.tr
-                                            key={s.id}
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -10 }}
-                                            className={`border-b border-gray-700 ${idx % 2 === 0 ? "bg-gray-900" : "bg-gray-800"} hover:bg-gray-700 transition-colors`}
-                                        >
-                                            <td className="p-2 text-center">{categoryIcons[s.category]}</td>
-                                            <td className="p-2">{s.name}</td>
-                                            <td className="p-2">₹{s.amount}</td>
-                                            <td className="p-2">{s.category}</td>
-                                            <td className="p-2">{created.toLocaleDateString()}</td>
-                                            <td className="p-2 text-center">
-                                                <button
-                                                    onClick={() => confirmDelete(s)}
-                                                    className="bg-rose-600 hover:bg-rose-800 p-2 rounded-full cursor-pointer transition-colors"
-                                                >
-                                                    <Trash className="w-5 h-5" />
-                                                </button>
-                                            </td>
-                                        </motion.tr>
-                                    );
-                                })}
+                                {currentItems
+                                    .slice() // to avoid mutating original array
+                                    .sort((a, b) => {
+                                        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+                                        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+                                        return dateB - dateA; // newest first
+                                    })
+                                    .map((s, idx) => {
+                                        const created = s.createdAt?.toDate ? s.createdAt.toDate() : new Date(s.createdAt);
+                                        return (
+                                            <motion.tr
+                                                key={s.id}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                className={`border-b border-gray-700 ${idx % 2 === 0 ? "bg-gray-900" : "bg-gray-800"} hover:bg-gray-700 transition-colors`}
+                                            >
+                                                <td className="p-2 text-center">{categoryIcons[s.category]}</td>
+                                                <td className="p-2">{s.name}</td>
+                                                <td className="p-2">₹{s.amount}</td>
+                                                <td className="p-2">{s.category}</td>
+                                                <td className="p-2">{created.toLocaleDateString()}</td>
+                                                <td className="p-2 text-center">
+                                                    <button
+                                                        onClick={() => confirmDelete(s)}
+                                                        className="bg-rose-600 hover:bg-rose-800 p-2 rounded-full cursor-pointer transition-colors"
+                                                    >
+                                                        <Trash className="w-5 h-5" />
+                                                    </button>
+                                                </td>
+                                            </motion.tr>
+                                        );
+                                    })}
                             </AnimatePresence>
                         </tbody>
                     </table>
                 </div>
 
+
                 {/* Mobile Card View with vertical DELETE */}
                 <div className="sm:hidden mt-4 space-y-4">
                     <AnimatePresence>
-                        {currentItems.map((s) => {
-                            const created = s.createdAt?.toDate ? s.createdAt.toDate() : new Date(s.createdAt);
+                        {currentItems
+                            .slice() // avoid mutating original array
+                            .sort((a, b) => {
+                                const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+                                const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+                                return dateB - dateA; // newest first
+                            })
+                            .map((s) => {
+                                const created = s.createdAt?.toDate ? s.createdAt.toDate() : new Date(s.createdAt);
 
-                            const isPressed = pressedCards[s.id] || false;
-                            const isDeleteClicked = deleteClickedCards[s.id] || false;
+                                const isPressed = pressedCards[s.id] || false;
+                                const isDeleteClicked = deleteClickedCards[s.id] || false;
 
-                            return (
-                                <motion.div
-                                    key={s.id}
-                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    animate={{ opacity: 1, y: isPressed ? -5 : 0, scale: isPressed ? 1.05 : 1 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                                    className={`flex overflow-hidden rounded-xl shadow-md cursor-pointer transition-colors duration-200
+                                return (
+                                    <motion.div
+                                        key={s.id}
+                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: isPressed ? -5 : 0, scale: isPressed ? 1.05 : 1 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                        className={`flex overflow-hidden rounded-xl shadow-md cursor-pointer transition-colors duration-200
             ${isPressed ? "bg-gray-700" : "bg-gray-800"} hover:bg-gray-700`}
-                                    onClick={() => {
-                                        setPressedCards((prev) => ({ ...prev, [s.id]: true }));
-                                        setTimeout(() => setPressedCards((prev) => ({ ...prev, [s.id]: false })), 200);
-                                    }}
-                                >
-                                    {/* Left 90%: Info */}
-                                    <div className="w-9/10 p-4 flex flex-col justify-between space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-2xl">{categoryIcons[s.category]}</span>
-                                                <span className="font-semibold text-white text-lg truncate">{s.name}</span>
-                                            </div>
-                                            <span className="font-bold text-blue-400 text-lg">₹{s.amount}</span>
-                                        </div>
-                                        <div className="flex justify-between text-gray-300 text-sm">
-                                            <span className="capitalize">{s.category}</span>
-                                            <span>{created.toLocaleDateString()}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Right 10%: Vertical DELETE */}
-                                    <div
-                                        className={`w-1/10 flex justify-center items-center cursor-pointer transition-colors
-              ${isDeleteClicked ? "bg-rose-600" : "bg-rose-700"}`}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setDeleteClickedCards((prev) => ({ ...prev, [s.id]: true }));
-                                            confirmDelete(s);
-                                            setTimeout(() => setDeleteClickedCards((prev) => ({ ...prev, [s.id]: false })), 300);
+                                        onClick={() => {
+                                            setPressedCards((prev) => ({ ...prev, [s.id]: true }));
+                                            setTimeout(() => setPressedCards((prev) => ({ ...prev, [s.id]: false })), 200);
                                         }}
                                     >
-                                        <span className="text-white font-bold tracking-widest transform -rotate-90 whitespace-nowrap text-xs">
-                                            DELETE
-                                        </span>
-                                    </div>
-                                </motion.div>
-                            );
-                        })}
+                                        {/* Left 90%: Info */}
+                                        <div className="w-9/10 p-4 flex flex-col justify-between space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-2xl">{categoryIcons[s.category]}</span>
+                                                    <span className="font-semibold text-white text-lg truncate">{s.name}</span>
+                                                </div>
+                                                <span className="font-bold text-blue-400 text-lg">₹{s.amount}</span>
+                                            </div>
+                                            <div className="flex justify-between text-gray-300 text-sm">
+                                                <span className="capitalize">{s.category}</span>
+                                                <span>{created.toLocaleDateString()}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Right 10%: Vertical DELETE */}
+                                        <div
+                                            className={`w-1/10 flex justify-center items-center cursor-pointer transition-colors
+              ${isDeleteClicked ? "bg-rose-600" : "bg-rose-700"}`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setDeleteClickedCards((prev) => ({ ...prev, [s.id]: true }));
+                                                confirmDelete(s);
+                                                setTimeout(() => setDeleteClickedCards((prev) => ({ ...prev, [s.id]: false })), 300);
+                                            }}
+                                        >
+                                            <span className="text-white font-bold tracking-widest transform -rotate-90 whitespace-nowrap text-xs">
+                                                DELETE
+                                            </span>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
                     </AnimatePresence>
                 </div>
+
 
 
 
