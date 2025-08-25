@@ -12,6 +12,7 @@ import {
     deleteDoc,
     doc,
 } from "firebase/firestore";
+import { useMemo } from "react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast, ToastContainer } from "react-toastify";
@@ -179,6 +180,24 @@ export default function Dashboard() {
         return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
     });
 
+
+    // inside your Dashboard component
+    const filteredTotal = useMemo(() => {
+        return filteredSpendings.reduce((sum, s) => sum + s.amount, 0);
+    }, [filteredSpendings]);
+
+    const filteredCount = useMemo(() => filteredSpendings.length, [filteredSpendings]);
+    const [pulse, setPulse] = useState(false);
+
+    // Trigger pulse whenever filteredTotal changes
+    useEffect(() => {
+        if (filteredTotal !== undefined) {
+            setPulse(true);
+            const timer = setTimeout(() => setPulse(false), 600); // pulse duration
+            return () => clearTimeout(timer);
+        }
+    }, [filteredTotal]);
+
     return (
         <div className="min-h-screen bg-gray-900 text-gray-100">
             <Navbar />
@@ -219,7 +238,7 @@ export default function Dashboard() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.15 }}
-                        className="bg-green-600 rounded-xl p-4 shadow-md cursor-pointer w-full"
+                        className="bg-yellow-600 rounded-xl p-4 shadow-md cursor-pointer w-full"
                     >
                         <p className="text-sm">This Month</p>
                         <p className="font-bold text-xl">
@@ -229,18 +248,48 @@ export default function Dashboard() {
                     </motion.div>
 
                     {/** Lifetime Card */}
+                    {/** Lifetime Card showing filtered spendings */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="bg-yellow-600 rounded-xl p-4 shadow-md cursor-pointer w-full"
+                        key={filteredTotal} // triggers animation whenever value changes
+                        className="rounded-xl p-4 shadow-md cursor-pointer w-full bg-green-600"
+                        animate={{
+                            backgroundColor: [
+                                "#01a34a", // Tailwind green-600
+                                "#60a34a", // lighter green
+                                "#16a34a", // back to normal
+                            ],
+                        }}
+                        transition={{
+                            duration: 3,
+                            ease: "easeInOut",
+                            repeat: Infinity,
+                        }}
                     >
-                        <p className="text-sm">Lifetime</p>
-                        <p className="font-bold text-xl">
-                            ₹{spendings.reduce((sum, s) => sum + s.amount, 0)}
-                        </p>
-                        <p className="text-xs">{spendings.length} transaction(s)</p>
+                        <motion.p
+                            className="text-sm text-white"
+                            animate={{ opacity: [1, 0.7, 1] }} // pulsate opacity
+                            transition={{ duration: 2, ease: "easeInOut", repeat: Infinity }}
+                        >
+                            Filtered Total
+                        </motion.p>
+                        <motion.p
+                            className="font-bold text-xl text-white"
+                            animate={{ opacity: [1, 0.7, 1] }}
+                            transition={{ duration: 2, ease: "easeInOut", repeat: Infinity }}
+                        >
+                            ₹{filteredTotal}
+                        </motion.p>
+                        <motion.p
+                            className="text-xs text-white"
+                            animate={{ opacity: [1, 0.7, 1] }}
+                            transition={{ duration: 2, ease: "easeInOut", repeat: Infinity }}
+                        >
+                            {filteredCount} transaction(s)
+                        </motion.p>
                     </motion.div>
+
+
+
                 </div>
 
 
