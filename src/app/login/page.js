@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { auth, googleProvider, db } from "../../lib/firebase";
-import { signInWithPopup } from "firebase/auth";
+import { signInWithPopup, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { GoogleLogo } from "phosphor-react";
@@ -11,8 +11,8 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function LoginPage() {
     const router = useRouter();
     const [activeIndex, setActiveIndex] = useState(0);
-    const [loading, setLoading] = useState(false); // track login progress
-    const [user, setUser] = useState(null); // track Firebase auth state
+    const [loading, setLoading] = useState(false);
+    const [user, setUser] = useState(null);
 
     const points = ["Track", "Journal", "Analyze"];
 
@@ -24,7 +24,7 @@ export default function LoginPage() {
         return () => clearInterval(interval);
     }, []);
 
-    // Listen for auth state changes
+    // Listen for auth state changes and redirect if logged in
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
             if (firebaseUser) {
@@ -37,11 +37,15 @@ export default function LoginPage() {
         return () => unsubscribe();
     }, [router]);
 
-    // Handle Google login
+    // Handle Google login with persistent session
     const handleGoogleLogin = async () => {
-        if (loading) return; // prevent multiple popups
+        if (loading) return;
         setLoading(true);
+
         try {
+            // Ensure auth persists across refresh and browser closes
+            await setPersistence(auth, browserLocalPersistence);
+
             const result = await signInWithPopup(auth, googleProvider);
             const firebaseUser = result.user;
 
@@ -98,7 +102,9 @@ export default function LoginPage() {
             <button
                 onClick={handleGoogleLogin}
                 disabled={loading}
-                className={`flex items-center gap-3 px-6 py-3 rounded-lg transition text-lg shadow-md cursor-pointer ${loading ? "bg-gray-500 text-gray-300" : "bg-white text-gray-900 hover:bg-gray-100"
+                className={`flex items-center gap-3 px-6 py-3 rounded-lg transition text-lg shadow-md cursor-pointer ${loading
+                        ? "bg-gray-500 text-gray-300"
+                        : "bg-white text-gray-900 hover:bg-gray-100"
                     }`}
             >
                 {loading ? (
