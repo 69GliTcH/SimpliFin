@@ -80,6 +80,28 @@ const DateRangeDisplay = ({ start, end }) => {
     return `${start ? start.toLocaleDateString() : "Start"} - ${end ? end.toLocaleDateString() : "End"}`;
 };
 
+// Format date to "21st Aug 2025" format
+const formatDateWithOrdinal = (date) => {
+    if (!date) return "";
+    
+    const day = date.getDate();
+    const month = date.toLocaleDateString('en-US', { month: 'short' });
+    const year = date.getFullYear();
+    
+    // Add ordinal suffix to day
+    const ordinal = (day) => {
+        if (day > 3 && day < 21) return 'th';
+        switch (day % 10) {
+            case 1: return "st";
+            case 2: return "nd";
+            case 3: return "rd";
+            default: return "th";
+        }
+    };
+    
+    return `${day}${ordinal(day)} ${month} ${year}`;
+};
+
 export default function AnalyticsPage() {
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -171,8 +193,15 @@ export default function AnalyticsPage() {
         };
     }).filter(item => item.value > 0);
 
+    // Calculate total amount for center label
+    const totalPieAmount = pieData.reduce((sum, item) => sum + item.value, 0);
+
     // ECharts options for the square pie chart with responsive labels
     const getPieChartOption = () => {
+        const centerText = pieStart || pieEnd 
+            ? `${formatDateWithOrdinal(pieStart)}\nTo\n${formatDateWithOrdinal(pieEnd)}`
+            : 'All Time';
+
         return {
             tooltip: {
                 trigger: 'item',
@@ -184,6 +213,33 @@ export default function AnalyticsPage() {
             legend: {
                 show: false
             },
+            graphic: [
+                {
+                    type: 'text',
+                    left: 'center',
+                    top: 'center',
+                    style: {
+                        text: centerText,
+                        textAlign: 'center',
+                        fill: '#fff',
+                        fontSize: isMobile ? 12 : 14,
+                        fontWeight: 'bold',
+                        lineHeight: isMobile ? 14 : 18
+                    }
+                },
+                {
+                    type: 'text',
+                    left: 'center',
+                    top: pieStart || pieEnd ? '60%' : '55%',
+                    style: {
+                        text: `₹${totalPieAmount.toFixed(2)}`,
+                        textAlign: 'center',
+                        fill: '#3b82f6',
+                        fontSize: isMobile ? 14 : 16,
+                        fontWeight: 'bold'
+                    }
+                }
+            ],
             series: [
                 {
                     name: 'Spending',
