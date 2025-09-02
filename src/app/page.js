@@ -105,6 +105,7 @@ export default function LoginPage() {
                 className={`flex items-center gap-3 px-6 py-3 rounded-lg transition text-lg shadow-md cursor-pointer ${loading
                     ? "bg-gray-500 text-gray-300"
                     : "bg-white text-gray-900 hover:bg-gray-100"
+
                     }`}
             >
                 {loading ? (
