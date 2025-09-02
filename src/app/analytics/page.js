@@ -41,17 +41,33 @@ const categoryIcons = {
 const COLORS = ["#3b82f6", "#eab308", "#22c55e", "#ef4444", "#a855f7", "#14b8a6"];
 const ALL_CATEGORIES = ["Food", "Other", "Home", "Subscriptions", "Travel", "Entertainment"];
 
+// Fixed color mapping for each category
+const CATEGORY_COLORS = {
+    Food: "#3b82f6",
+    Other: "#eab308",
+    Home: "#22c55e",
+    Subscriptions: "#ef4444",
+    Travel: "#a855f7",
+    Entertainment: "#14b8a6"
+};
+
 // Custom tooltip component for charts
 const CustomTooltip = ({ active, payload, label, chartType }) => {
     if (active && payload && payload.length) {
+        const data = payload[0].payload;
+        
         return (
             <div className="bg-gray-800 p-3 rounded-lg border border-gray-700 shadow-lg">
                 <p className="text-gray-300">
                     {chartType === "line" ? `Date: ${label}` : `Category: ${payload[0].name}`}
                 </p>
-                <p className="font-semibold text-blue-400">
-                    Amount: ₹{payload[0].value}
-                </p>
+                {data.isAggregated && (
+                    <div className="mt-2 pt-2 border-t border-gray-700">
+                        <p className="text-sm text-gray-400">
+                            {data.count} transaction{data.count > 1 ? 's' : ''}
+                        </p>
+                    </div>
+                )}
             </div>
         );
     }
@@ -71,7 +87,7 @@ const RenderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
     const radius = outerRadius * 1.3;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
-    const color = COLORS[index % COLORS.length];
+    const color = CATEGORY_COLORS[name] || COLORS[index % COLORS.length];
 
     return (
         <g>
@@ -178,34 +194,108 @@ export default function AnalyticsPage() {
     });
 
     // Fix: Ensure consistent category naming
-    const pieData = Object.values(
-        filteredPie.reduce((acc, exp) => {
-            // Normalize category name to match your ALL_CATEGORIES
-            const normalizedCategory = exp.category || "Other";
-
-            acc[normalizedCategory] = acc[normalizedCategory] || {
-                name: normalizedCategory,
-                value: 0,
-                icon: categoryIcons[normalizedCategory] || categoryIcons.Other
-            };
-            acc[normalizedCategory].value += Number(exp.amount);
-            return acc;
-        }, {})
-    );
-
-    // Fix: Get only categories that actually have data
-    const categoriesWithData = [...new Set(filteredPie.map(exp => exp.category || "Other"))];
+    const pieData = ALL_CATEGORIES.map(category => {
+        const total = filteredPie
+            .filter(exp => (exp.category || "Other") === category)
+            .reduce((sum, exp) => sum + Number(exp.amount), 0);
+        
+        return {
+            name: category,
+            value: total,
+            icon: categoryIcons[category] || categoryIcons.Other
+        };
+    }).filter(item => item.value > 0);
 
     // Filtered Line Chart - show individual transactions
     const filteredLine = lineExpenses.filter((exp) => {
         if (lineStart && exp.createdAt < lineStart) return false;
-        if (lineEnd && exp.createdAt > pieEnd) return false;
+        if (lineEnd && exp.createdAt > lineEnd) return false; // FIXED: Changed pieEnd to lineEnd
         if (lineCategory && exp.category !== lineCategory) return false;
         return true;
     });
 
-    // Format line data with individual transactions
-    const lineData = filteredLine
+    // Function to aggregate line chart data when too many points
+    const aggregateLineData = (data, threshold = 15) => {
+        // If data points are below threshold, return original data
+        if (data.length <= threshold) {
+            return data;
+        }
+        
+        // Calculate the date range
+        const dates = data.map(d => d.fullDate);
+        const minDate = new Date(Math.min(...dates));
+        const maxDate = new Date(Math.max(...dates));
+        const rangeInDays = (maxDate - minDate) / (1000 * 60 * 60 * 24);
+        
+        // Determine aggregation interval based on date range
+        let interval;
+        if (rangeInDays <= 31) {
+            interval = 'day'; // Aggregate by day for up to a month
+        } else if (rangeInDays <= 365) {
+            interval = 'month'; // Aggregate by month for up to a year
+        } else {
+            interval = 'year'; // Aggregate by year for longer ranges
+        }
+        
+        // Group data by interval
+        const aggregatedData = {};
+        
+        data.forEach(item => {
+            let key;
+            const date = item.fullDate;
+            
+            if (interval === 'day') {
+                key = date.toDateString(); // Unique by day
+            } else if (interval === 'month') {
+                // Use month and year as key
+                key = `${date.getFullYear()}-${date.getMonth()}`;
+            } else {
+                key = `${date.getFullYear()}`; // Year only
+            }
+            
+            if (!aggregatedData[key]) {
+                let displayDate;
+                if (interval === 'day') {
+                    displayDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                } else if (interval === 'month') {
+                    displayDate = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                } else {
+                    displayDate = date.getFullYear().toString();
+                }
+                
+                aggregatedData[key] = {
+                    date: displayDate,
+                    fullDate: date,
+                    amount: 0,
+                    count: 0,
+                    categories: new Set(),
+                    isAggregated: true
+                };
+            }
+            
+            aggregatedData[key].amount += item.amount;
+            aggregatedData[key].count += 1;
+            aggregatedData[key].categories.add(item.category);
+        });
+        
+        // Convert to array and calculate average
+        const result = Object.values(aggregatedData).map(item => ({
+            ...item,
+            amount: item.amount, // Keep total amount for aggregated data
+            categories: Array.from(item.categories),
+            // For display in tooltip and details panel
+            name: `${item.count} transaction${item.count > 1 ? 's' : ''}`,
+            category: item.categories.size > 1 
+                ? 'Multiple categories' 
+                : Array.from(item.categories)[0]
+        }));
+        
+        // Sort by date
+        return result.sort((a, b) => a.fullDate - b.fullDate);
+    };
+
+    // Format line data with individual transactions or aggregated data
+    const rawLineData = filteredLine
         .map((exp) => ({
             date: exp.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
             fullDate: exp.createdAt,
@@ -214,8 +304,11 @@ export default function AnalyticsPage() {
             category: exp.category,
             icon: categoryIcons[exp.category] || categoryIcons.Other,
             id: exp.id,
+            isAggregated: false
         }))
         .sort((a, b) => a.fullDate - b.fullDate);
+
+    const lineData = aggregateLineData(rawLineData);
 
     // Calculate total amount for summary
     const totalAmount = filteredLine.reduce((sum, exp) => sum + Number(exp.amount), 0);
@@ -253,7 +346,7 @@ export default function AnalyticsPage() {
                 <circle
                     cx={cx}
                     cy={cy}
-                    r={3}
+                    r={6}
                     fill="#3b82f6"
                     stroke="#fff"
                     strokeWidth={1}
@@ -367,28 +460,27 @@ export default function AnalyticsPage() {
                                                 label={(props) => <RenderCustomizedLabel {...props} />}
                                             >
                                                 {pieData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                    <Cell 
+                                                        key={`cell-${index}`} 
+                                                        fill={CATEGORY_COLORS[entry.name] || COLORS[index % COLORS.length]} 
+                                                    />
                                                 ))}
                                             </Pie>
                                             <Tooltip formatter={(value) => `₹${value}`} />
                                         </PieChart>
                                     </ResponsiveContainer>
 
-                                    {/* Color-coded category legend (showing only categories with data) */}
+                                    {/* Color-coded category legend (ALWAYS SHOW ALL CATEGORIES) */}
                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-4">
-                                        {categoriesWithData.map((category, index) => {
-                                            const categoryIndex = ALL_CATEGORIES.indexOf(category);
-                                            const colorIndex = categoryIndex >= 0 ? categoryIndex : COLORS.length - 1;
-                                            return (
-                                                <div key={category} className="flex items-center">
-                                                    <div
-                                                        className="w-4 h-4 rounded-sm mr-2"
-                                                        style={{ backgroundColor: COLORS[colorIndex % COLORS.length] }}
-                                                    ></div>
-                                                    <span className="text-sm text-gray-300">{category}</span>
-                                                </div>
-                                            );
-                                        })}
+                                        {ALL_CATEGORIES.map((category) => (
+                                            <div key={category} className="flex items-center">
+                                                <div
+                                                    className="w-4 h-4 rounded-sm mr-2"
+                                                    style={{ backgroundColor: CATEGORY_COLORS[category] }}
+                                                ></div>
+                                                <span className="text-sm text-gray-300">{category}</span>
+                                            </div>
+                                        ))}
                                     </div>
                                 </>
                             )}
@@ -555,7 +647,7 @@ export default function AnalyticsPage() {
                                             />
                                             <YAxis stroke="#ccc" />
                                             {/* Disable default tooltip */}
-                                            <Tooltip content={() => null} />
+                                            <Tooltip content={<CustomTooltip chartType="line" />} />
                                             <Line
                                                 type="monotone"
                                                 dataKey="amount"
