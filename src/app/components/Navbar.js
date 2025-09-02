@@ -1,9 +1,9 @@
 "use client";
 
 import { useAuth } from "../context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { Menu, X } from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
@@ -11,7 +11,20 @@ import "react-toastify/dist/ReactToastify.css";
 export default function Navbar() {
     const { user, logout } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
     const [menuOpen, setMenuOpen] = useState(false);
+    const [activePage, setActivePage] = useState("");
+
+    useEffect(() => {
+        // Set active page based on current path
+        if (pathname === "/dashboard") {
+            setActivePage("dashboard");
+        } else if (pathname === "/analytics") {
+            setActivePage("analytics");
+        } else {
+            setActivePage("");
+        }
+    }, [pathname]);
 
     const handleLogout = async () => {
         try {
@@ -21,6 +34,18 @@ export default function Navbar() {
         } catch (err) {
             toast.error("Logout failed. Try again.");
         }
+    };
+
+    // Helper function to determine button style based on active state
+    const getButtonStyle = (page) => {
+        const isActive = activePage === page;
+        return {
+            className: `px-4 py-2 rounded-lg text-white font-medium transition-all cursor-pointer border-2 ${
+                isActive 
+                    ? "border-blue-500 bg-gray-800/90 hover:bg-gray-700/90" 
+                    : "border-transparent bg-gray-800 hover:bg-gray-700"
+            }`
+        };
     };
 
     return (
@@ -49,7 +74,7 @@ export default function Navbar() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => router.push("/dashboard")}
-                        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-medium transition-all cursor-pointer"
+                        {...getButtonStyle("dashboard")}
                     >
                         Dashboard
                     </motion.button>
@@ -58,7 +83,7 @@ export default function Navbar() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => router.push("/analytics")}
-                        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-medium transition-all cursor-pointer"
+                        {...getButtonStyle("analytics")}
                     >
                         Analytics
                     </motion.button>
@@ -67,7 +92,7 @@ export default function Navbar() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={handleLogout}
-                        className="px-4 py-2 bg-blue-700 hover:bg-blue-900 rounded-lg text-white font-medium transition-all cursor-pointer"
+                        className="px-4 py-2 bg-blue-700 hover:bg-blue-900 rounded-lg text-white font-medium transition-all cursor-pointer border-2 border-transparent"
                     >
                         Logout
                     </motion.button>
@@ -92,19 +117,27 @@ export default function Navbar() {
                     >
                         <button
                             onClick={() => { router.push("/dashboard"); setMenuOpen(false); }}
-                            className="px-4 py-2 bg-gray-800/80 hover:bg-gray-700/80 rounded-md text-white text-left"
+                            className={`px-4 py-2 rounded-md text-white text-left border-2 ${
+                                activePage === "dashboard" 
+                                    ? "border-blue-500 bg-gray-800/90" 
+                                    : "border-transparent bg-gray-800/80 hover:bg-gray-700/80"
+                            }`}
                         >
                             Dashboard
                         </button>
                         <button
                             onClick={() => { router.push("/analytics"); setMenuOpen(false); }}
-                            className="px-4 py-2 bg-gray-800/80 hover:bg-gray-700/80 rounded-md text-white text-left"
+                            className={`px-4 py-2 rounded-md text-white text-left border-2 ${
+                                activePage === "analytics" 
+                                    ? "border-blue-500 bg-gray-800/90" 
+                                    : "border-transparent bg-gray-800/80 hover:bg-gray-700/80"
+                            }`}
                         >
                             Analytics
                         </button>
                         <button
                             onClick={() => { handleLogout(); setMenuOpen(false); }}
-                            className="px-4 py-2 bg-blue-700/80 hover:bg-blue-900/80 rounded-md text-white text-left"
+                            className="px-4 py-2 bg-blue-700/80 hover:bg-blue-900/80 rounded-md text-white text-left border-2 border-transparent"
                         >
                             Logout
                         </button>
