@@ -20,6 +20,7 @@ export default function Navbar() {
         }
     };
 
+
     return (
         <motion.div
             initial={{ y: -80, opacity: 0 }}
@@ -29,7 +30,7 @@ export default function Navbar() {
         >
             <div className="flex items-center gap-4">
                 <img
-                    src={user?.photoURL || "/default.png"}
+                    src={user?.photoURL ?? "/stock.jpg"}
                     alt="Profile"
                     className="w-10 h-10 rounded-full border-2 border-gray-700"
                 />
@@ -42,7 +43,7 @@ export default function Navbar() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleLogout} // ✅ works now
-                className="px-4 py-2 bg-blue-900 hover:bg-blue-700 rounded-full text-white font-medium transition-all cursor-pointer"
+                className="px-4 py-2  bg-blue-700 hover:bg-blue-900  rounded-full text-white font-medium transition-all cursor-pointer"
             >
                 Logout
             </motion.button>

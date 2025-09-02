@@ -1,10 +1,9 @@
 "use client";
 
-import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/Navbar";
 import AddSpendingModal from "../components/AddSpendingModal";
-import { db } from "../../lib/firebase";
+import { db, auth } from "../../lib/firebase";
 import {
     collection,
     addDoc,
@@ -13,6 +12,7 @@ import {
     deleteDoc,
     doc,
 } from "firebase/firestore";
+import { useMemo } from "react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast, ToastContainer } from "react-toastify";
@@ -40,24 +40,63 @@ const categoryIcons = {
 };
 
 export default function Dashboard() {
-    const { user } = useAuth();
     const router = useRouter();
+
+    const [user, setUserLocal] = useState(null); // local state for user
     const [spendings, setSpendings] = useState([]);
     const [open, setOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [dateRange, setDateRange] = useState({ start: null, end: null });
     const [categoryFilter, setCategoryFilter] = useState("");
     const [showDatePicker, setShowDatePicker] = useState(false);
-
+    const [showCategory, setShowCategory] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+    const [pressedCards, setPressedCards] = useState({});
+    const [deleteClickedCards, setDeleteClickedCards] = useState({});
 
     const datePickerRef = useRef(null);
+    const categoryRef = useRef(null);
 
-    // Redirect if not logged in
+    // Listen to auth state for redirect
     useEffect(() => {
-        if (user === null) router.push("/login");
-    }, [user, router]);
+        const unsubscribeAuth = auth.onAuthStateChanged((firebaseUser) => {
+            if (firebaseUser) {
+                setUserLocal(firebaseUser);
+            } else {
+                setSpendings([]); // Clear spendings
+                router.push("/login");
+            }
+        });
+        return () => unsubscribeAuth();
+    }, [router]);
+
+    // Fetch spendings with cleanup to prevent permission errors
+    useEffect(() => {
+        if (!user) return;
+
+        const q = query(collection(db, "users", user.uid, "spendings"));
+        const unsubscribeFirestore = onSnapshot(
+            q,
+            (snapshot) => {
+                const data = snapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+                setSpendings(data);
+            },
+            (error) => {
+                if (error.code === "permission-denied") {
+                    console.warn("Firestore permission denied, possibly logged out.");
+                    setSpendings([]);
+                } else {
+                    console.error(error);
+                }
+            }
+        );
+
+        return () => unsubscribeFirestore();
+    }, [user]);
 
     // Close datepicker when clicking outside
     useEffect(() => {
@@ -71,20 +110,6 @@ export default function Dashboard() {
         }
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [showDatePicker]);
-
-    // Fetch spendings
-    useEffect(() => {
-        if (!user) return;
-        const q = query(collection(db, "users", user.uid, "spendings"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-            }));
-            setSpendings(data);
-        });
-        return () => unsubscribe();
-    }, [user]);
 
     const addSpending = async (amount, category, name) => {
         if (!user) return;
@@ -104,10 +129,9 @@ export default function Dashboard() {
     const confirmDelete = (spending) => setDeleteTarget(spending);
 
     const handleDelete = async () => {
+        if (!user || !deleteTarget) return;
         try {
-            await deleteDoc(
-                doc(db, "users", user.uid, "spendings", deleteTarget.id)
-            );
+            await deleteDoc(doc(db, "users", user.uid, "spendings", deleteTarget.id));
             toast.success("Deleted!");
             setDeleteTarget(null);
         } catch {
@@ -115,6 +139,7 @@ export default function Dashboard() {
         }
     };
 
+    // Filters
     const filteredSpendings = spendings.filter((s) => {
         let dateMatch = true;
         if (dateRange.start && dateRange.end) {
@@ -128,7 +153,7 @@ export default function Dashboard() {
         return dateMatch && categoryMatch;
     });
 
-    // Pagination logic
+    // Pagination
     const totalPages = Math.ceil(filteredSpendings.length / itemsPerPage);
     const currentItems = filteredSpendings.slice(
         (currentPage - 1) * itemsPerPage,
@@ -154,10 +179,24 @@ export default function Dashboard() {
         const created = s.createdAt?.toDate ? s.createdAt.toDate() : new Date(s.createdAt);
         return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
     });
-    const categoryRef = useRef(null);
-    const [showCategory, setShowCategory] = useState(false);
-    const [pressedCards, setPressedCards] = useState({});
-    const [deleteClickedCards, setDeleteClickedCards] = useState({});
+
+
+    // inside your Dashboard component
+    const filteredTotal = useMemo(() => {
+        return filteredSpendings.reduce((sum, s) => sum + s.amount, 0);
+    }, [filteredSpendings]);
+
+    const filteredCount = useMemo(() => filteredSpendings.length, [filteredSpendings]);
+    const [pulse, setPulse] = useState(false);
+
+    // Trigger pulse whenever filteredTotal changes
+    useEffect(() => {
+        if (filteredTotal !== undefined) {
+            setPulse(true);
+            const timer = setTimeout(() => setPulse(false), 600); // pulse duration
+            return () => clearTimeout(timer);
+        }
+    }, [filteredTotal]);
 
     return (
         <div className="min-h-screen bg-gray-900 text-gray-100">
@@ -199,7 +238,7 @@ export default function Dashboard() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.15 }}
-                        className="bg-green-600 rounded-xl p-4 shadow-md cursor-pointer w-full"
+                        className="bg-yellow-600 rounded-xl p-4 shadow-md cursor-pointer w-full"
                     >
                         <p className="text-sm">This Month</p>
                         <p className="font-bold text-xl">
@@ -209,31 +248,64 @@ export default function Dashboard() {
                     </motion.div>
 
                     {/** Lifetime Card */}
+                    {/** Lifetime Card showing filtered spendings */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="bg-yellow-600 rounded-xl p-4 shadow-md cursor-pointer w-full"
+                        key={filteredTotal} // triggers animation whenever value changes
+                        className="rounded-xl p-4 shadow-md cursor-pointer w-full bg-green-600"
+                        animate={{
+                            backgroundColor: [
+                                "#01a36a", // Tailwind green-600
+                                "#01a36a", // lighter green
+                                "#01a36a", // back to normal
+                            ],
+                        }}
+                        transition={{
+                            duration: 3,
+                            ease: "easeInOut",
+                            repeat: Infinity,
+                        }}
                     >
-                        <p className="text-sm">Lifetime</p>
-                        <p className="font-bold text-xl">
-                            ₹{spendings.reduce((sum, s) => sum + s.amount, 0)}
-                        </p>
-                        <p className="text-xs">{spendings.length} transaction(s)</p>
+                        <motion.p
+                            className="text-sm text-white"
+                            animate={{ opacity: [1, 0.7, 1] }}
+                            transition={{ duration: 1, ease: "easeInOut", repeat: Infinity, repeatType: "loop", delay: 0 }}
+                        >
+                            Filtered Total
+                        </motion.p>
+
+                        <motion.p
+                            className="font-bold text-xl text-white"
+                            animate={{ opacity: [1, 0.7, 1] }}
+                            transition={{ duration: 1, ease: "easeInOut", repeat: Infinity, repeatType: "loop", delay: 0.2 }}
+                        >
+                            ₹{filteredTotal}
+                        </motion.p>
+
+                        <motion.p
+                            className="text-xs text-white"
+                            animate={{ opacity: [1, 0.7, 1] }}
+                            transition={{ duration: 1, ease: "easeInOut", repeat: Infinity, repeatType: "loop", delay: 0.4 }}
+                        >
+                            {filteredCount} transaction(s)
+                        </motion.p>
+
                     </motion.div>
+
+
+
                 </div>
 
 
 
                 {/* Filters & Add */}
-                <div className="flex flex-wrap justify-center gap-4 mt-4">
-                    {/* Date Picker */}
-                    <div className="w-54 sm:w-54 order-1 sm:order-1">
+                <div className="flex justify-center gap-4 flex-wrap mt-4">
+                    {/* Date Range Picker */}
+                    <div className="relative" ref={datePickerRef}>
                         <button
                             onClick={() => setShowDatePicker((prev) => !prev)}
-                            className="flex items-center justify-between w-full px-4 py-2 bg-gray-800 
-                 hover:bg-gray-700 rounded-lg cursor-pointer text-white 
-                 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            className="flex items-center justify-between gap-2 w-54 px-4 py-2 bg-gray-800 
+                       hover:bg-gray-700 rounded-lg cursor-pointer text-white 
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         >
                             <span className="truncate">
                                 {dateRange.start && dateRange.end
@@ -241,7 +313,8 @@ export default function Dashboard() {
                                     : "Select Date Range"}
                             </span>
                             <svg
-                                className={`w-4 h-4 transition-transform duration-200 ${showDatePicker ? "rotate-180" : ""}`}
+                                className={`w-4 h-4 transition-transform duration-200 ${showDatePicker ? "rotate-180" : ""
+                                    }`}
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -249,52 +322,103 @@ export default function Dashboard() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
+                        {showDatePicker && (
+                            <div className="absolute mt-2 z-50 bg-gray-900 p-3 rounded-lg shadow-lg">
+                                <DatePicker
+                                    selected={dateRange.start}
+                                    onChange={(dates) => {
+                                        const [start, end] = dates;
+                                        setDateRange({ start, end });
+                                        if (start && end) setShowDatePicker(false);
+                                    }}
+                                    startDate={dateRange.start}
+                                    endDate={dateRange.end}
+                                    selectsRange
+                                    inline
+                                />
+                            </div>
+                        )}
                     </div>
 
-                    {/* Reset */}
+                    {/* Category Filter (custom dropdown like date range) */}
+                    <div className="relative" ref={categoryRef}>
+                        <button
+                            onClick={() => setShowCategory((prev) => !prev)}
+                            className="flex items-center justify-between w-54 px-4 py-2 bg-gray-800 
+                       hover:bg-gray-700 rounded-lg cursor-pointer text-white 
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        >
+                            <span className="truncate">
+                                {categoryFilter ? categoryFilter : "All Categories"}
+                            </span>
+                            <svg
+                                className={`w-4 h-4 transition-transform duration-200 ${showCategory ? "rotate-180" : ""
+                                    }`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <AnimatePresence>
+                            {showCategory && (
+                                <motion.ul
+                                    initial={{ opacity: 0, y: -5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -5 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="absolute left-0 mt-2 w-40 bg-gray-500 rounded-lg shadow-lg z-50"
+                                >
+                                    <li
+                                        className="px-3 py-2 hover:bg-gray-700 rounded cursor-pointer text-white"
+                                        onClick={() => {
+                                            setCategoryFilter("");
+                                            setShowCategory(false);
+                                        }}
+                                    >
+                                        All Categories
+                                    </li>
+                                    {Object.keys(categoryIcons).map((c) => (
+                                        <li
+                                            key={c}
+                                            className="px-3 py-2 hover:bg-gray-700 rounded cursor-pointer text-white"
+                                            onClick={() => {
+                                                setCategoryFilter(c);
+                                                setShowCategory(false);
+                                            }}
+                                        >
+                                            {c}
+                                        </li>
+                                    ))}
+                                </motion.ul>
+                            )}
+                        </AnimatePresence>
+
+                    </div>
+
+                    {/* Reset Filters */}
                     <button
                         onClick={() => {
                             setCategoryFilter("");
                             setDateRange({ start: null, end: null });
                             toast.info("Filters reset!");
                         }}
-                        className="w-full sm:w-auto order-3 sm:order-3 px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-white cursor-pointer 
-               transition focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        className="px-4 py-2 w-38 bg-gray-600 hover:bg-gray-500 rounded-lg text-white cursor-pointer 
+                   transition focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     >
-                        Reset
+                        Reset Filters
                     </button>
-
-                    {/* Category Filter */}
-                    <div className="w-54 sm:w-40 order-2 sm:order-3">
-                        <button
-                            onClick={() => setShowCategory((prev) => !prev)}
-                            className="flex items-center justify-between w-full px-4 py-2 bg-gray-800 
-                 hover:bg-gray-700 rounded-lg cursor-pointer text-white 
-                 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                        >
-                            <span className="truncate">{categoryFilter ? categoryFilter : "All Categories"}</span>
-                            <svg
-                                className={`w-4 h-4 transition-transform duration-200 ${showCategory ? "rotate-180" : ""}`}
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                    </div>
 
                     {/* Add Spending */}
                     <button
                         onClick={() => setOpen(true)}
-                        className="w-full sm:w-auto order-4 sm:order-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white cursor-pointer 
-               transition focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        className="px-4 py-2 w-38 bg-blue-600 hover:bg-blue-700 rounded-lg text-white cursor-pointer 
+                   transition focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     >
                         + Add Spending
                     </button>
                 </div>
-
-
 
 
 
@@ -315,95 +439,111 @@ export default function Dashboard() {
                         </thead>
                         <tbody>
                             <AnimatePresence>
-                                {currentItems.map((s, idx) => {
-                                    const created = s.createdAt?.toDate ? s.createdAt.toDate() : new Date(s.createdAt);
-                                    return (
-                                        <motion.tr
-                                            key={s.id}
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -10 }}
-                                            className={`border-b border-gray-700 ${idx % 2 === 0 ? "bg-gray-900" : "bg-gray-800"} hover:bg-gray-700 transition-colors`}
-                                        >
-                                            <td className="p-2 text-center">{categoryIcons[s.category]}</td>
-                                            <td className="p-2">{s.name}</td>
-                                            <td className="p-2">₹{s.amount}</td>
-                                            <td className="p-2">{s.category}</td>
-                                            <td className="p-2">{created.toLocaleDateString()}</td>
-                                            <td className="p-2 text-center">
-                                                <button
-                                                    onClick={() => confirmDelete(s)}
-                                                    className="bg-rose-600 hover:bg-rose-800 p-2 rounded-full cursor-pointer transition-colors"
-                                                >
-                                                    <Trash className="w-5 h-5" />
-                                                </button>
-                                            </td>
-                                        </motion.tr>
-                                    );
-                                })}
+                                {currentItems
+                                    .slice() // to avoid mutating original array
+                                    .sort((a, b) => {
+                                        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+                                        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+                                        return dateB - dateA; // newest first
+                                    })
+                                    .map((s, idx) => {
+                                        const created = s.createdAt?.toDate ? s.createdAt.toDate() : new Date(s.createdAt);
+                                        return (
+                                            <motion.tr
+                                                key={s.id}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                className={`border-b border-gray-700 ${idx % 2 === 0 ? "bg-gray-900" : "bg-gray-800"} hover:bg-gray-700 transition-colors`}
+                                            >
+                                                <td className="p-2 text-center">{categoryIcons[s.category]}</td>
+                                                <td className="p-2">{s.name}</td>
+                                                <td className="p-2">₹{s.amount}</td>
+                                                <td className="p-2">{s.category}</td>
+                                                <td className="p-2">{created.toLocaleDateString()}</td>
+                                                <td className="p-2 text-center">
+                                                    <button
+                                                        onClick={() => confirmDelete(s)}
+                                                        className="bg-rose-600 hover:bg-rose-800 p-2 rounded-full cursor-pointer transition-colors"
+                                                    >
+                                                        <Trash className="w-5 h-5" />
+                                                    </button>
+                                                </td>
+                                            </motion.tr>
+                                        );
+                                    })}
                             </AnimatePresence>
                         </tbody>
                     </table>
                 </div>
 
+
                 {/* Mobile Card View with vertical DELETE */}
                 <div className="sm:hidden mt-4 space-y-4">
                     <AnimatePresence>
-                        {currentItems.map((s) => {
-                            const created = s.createdAt?.toDate ? s.createdAt.toDate() : new Date(s.createdAt);
+                        {currentItems
+                            .slice() // avoid mutating original array
+                            .sort((a, b) => {
+                                const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+                                const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+                                return dateB - dateA; // newest first
+                            })
+                            .map((s) => {
+                                const created = s.createdAt?.toDate ? s.createdAt.toDate() : new Date(s.createdAt);
 
-                            const isPressed = pressedCards[s.id] || false;
-                            const isDeleteClicked = deleteClickedCards[s.id] || false;
+                                const isPressed = pressedCards[s.id] || false;
+                                const isDeleteClicked = deleteClickedCards[s.id] || false;
 
-                            return (
-                                <motion.div
-                                    key={s.id}
-                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    animate={{ opacity: 1, y: isPressed ? -5 : 0, scale: isPressed ? 1.05 : 1 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                                    className={`flex overflow-hidden rounded-xl shadow-md cursor-pointer transition-colors duration-200
+                                return (
+                                    <motion.div
+                                        key={s.id}
+                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: isPressed ? -5 : 0, scale: isPressed ? 1.05 : 1 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                        className={`flex overflow-hidden rounded-xl shadow-md cursor-pointer transition-colors duration-200
             ${isPressed ? "bg-gray-700" : "bg-gray-800"} hover:bg-gray-700`}
-                                    onClick={() => {
-                                        setPressedCards((prev) => ({ ...prev, [s.id]: true }));
-                                        setTimeout(() => setPressedCards((prev) => ({ ...prev, [s.id]: false })), 200);
-                                    }}
-                                >
-                                    {/* Left 90%: Info */}
-                                    <div className="w-9/10 p-4 flex flex-col justify-between space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-2xl">{categoryIcons[s.category]}</span>
-                                                <span className="font-semibold text-white text-lg truncate">{s.name}</span>
-                                            </div>
-                                            <span className="font-bold text-blue-400 text-lg">₹{s.amount}</span>
-                                        </div>
-                                        <div className="flex justify-between text-gray-300 text-sm">
-                                            <span className="capitalize">{s.category}</span>
-                                            <span>{created.toLocaleDateString()}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Right 10%: Vertical DELETE */}
-                                    <div
-                                        className={`w-1/10 flex justify-center items-center cursor-pointer transition-colors
-              ${isDeleteClicked ? "bg-rose-600" : "bg-rose-700"}`}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setDeleteClickedCards((prev) => ({ ...prev, [s.id]: true }));
-                                            confirmDelete(s);
-                                            setTimeout(() => setDeleteClickedCards((prev) => ({ ...prev, [s.id]: false })), 300);
+                                        onClick={() => {
+                                            setPressedCards((prev) => ({ ...prev, [s.id]: true }));
+                                            setTimeout(() => setPressedCards((prev) => ({ ...prev, [s.id]: false })), 200);
                                         }}
                                     >
-                                        <span className="text-white font-bold tracking-widest transform -rotate-90 whitespace-nowrap text-xs">
-                                            DELETE
-                                        </span>
-                                    </div>
-                                </motion.div>
-                            );
-                        })}
+                                        {/* Left 90%: Info */}
+                                        <div className="w-9/10 p-4 flex flex-col justify-between space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-2xl">{categoryIcons[s.category]}</span>
+                                                    <span className="font-semibold text-white text-lg truncate">{s.name}</span>
+                                                </div>
+                                                <span className="font-bold text-blue-400 text-lg">₹{s.amount}</span>
+                                            </div>
+                                            <div className="flex justify-between text-gray-300 text-sm">
+                                                <span className="capitalize">{s.category}</span>
+                                                <span>{created.toLocaleDateString()}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Right 10%: Vertical DELETE */}
+                                        <div
+                                            className={`w-1/10 flex justify-center items-center cursor-pointer transition-colors
+              ${isDeleteClicked ? "bg-rose-600" : "bg-rose-700"}`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setDeleteClickedCards((prev) => ({ ...prev, [s.id]: true }));
+                                                confirmDelete(s);
+                                                setTimeout(() => setDeleteClickedCards((prev) => ({ ...prev, [s.id]: false })), 300);
+                                            }}
+                                        >
+                                            <span className="text-white font-bold tracking-widest transform -rotate-90 whitespace-nowrap text-xs">
+                                                DELETE
+                                            </span>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
                     </AnimatePresence>
                 </div>
+
 
 
 
@@ -509,7 +649,7 @@ export default function Dashboard() {
             </AnimatePresence>
             <footer className="w-full py-6 bg-gray-900 text-center">
                 <p className="text-gray-500 text-sm">
-                    &copy; 2025 SimpliFin.<br />
+                    &copy; 2025 SimplyFin.<br />
                     Developer&apos;s Credit: <span className="font-semibold">Saksham Verma</span>.<br />
                     All rights reserved.
                 </p>
