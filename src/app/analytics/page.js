@@ -38,10 +38,8 @@ const categoryIcons = {
     Other: <ShoppingCart className="w-5 h-5 mx-auto" />,
 };
 
-const COLORS = ["#3b82f6", "#22c55e", "#ef4444", "#eab308", "#a855f7", "#14b8a6"];
-
-// All categories for the legend (not dynamic)
-const ALL_CATEGORIES = ["Food", "Travel", "Home", "Subscriptions", "Entertainment", "Other"];
+const COLORS         = ["#3b82f6","#eab308", "#22c55e", "#ef4444", "#a855f7",  "#14b8a6"];
+const ALL_CATEGORIES = ["Food","Other","Home","Subscriptions","Travel","Entertainment"];
 
 // Custom tooltip component for charts
 const CustomTooltip = ({ active, payload, label, chartType }) => {
@@ -179,17 +177,24 @@ export default function AnalyticsPage() {
         return true;
     });
 
+    // Fix: Ensure consistent category naming
     const pieData = Object.values(
         filteredPie.reduce((acc, exp) => {
-            acc[exp.category] = acc[exp.category] || {
-                name: exp.category,
+            // Normalize category name to match your ALL_CATEGORIES
+            const normalizedCategory = exp.category || "Other";
+
+            acc[normalizedCategory] = acc[normalizedCategory] || {
+                name: normalizedCategory,
                 value: 0,
-                icon: categoryIcons[exp.category] || categoryIcons.Other
+                icon: categoryIcons[normalizedCategory] || categoryIcons.Other
             };
-            acc[exp.category].value += Number(exp.amount);
+            acc[normalizedCategory].value += Number(exp.amount);
             return acc;
         }, {})
     );
+
+    // Fix: Get only categories that actually have data
+    const categoriesWithData = [...new Set(filteredPie.map(exp => exp.category || "Other"))];
 
     // Filtered Line Chart - show individual transactions
     const filteredLine = lineExpenses.filter((exp) => {
@@ -369,17 +374,21 @@ export default function AnalyticsPage() {
                                         </PieChart>
                                     </ResponsiveContainer>
 
-                                    {/* Color-coded category legend (showing all categories) */}
+                                    {/* Color-coded category legend (showing only categories with data) */}
                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-4">
-                                        {ALL_CATEGORIES.map((category, index) => (
-                                            <div key={category} className="flex items-center">
-                                                <div
-                                                    className="w-4 h-4 rounded-sm mr-2"
-                                                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                                                ></div>
-                                                <span className="text-sm text-gray-300">{category}</span>
-                                            </div>
-                                        ))}
+                                        {categoriesWithData.map((category, index) => {
+                                            const categoryIndex = ALL_CATEGORIES.indexOf(category);
+                                            const colorIndex = categoryIndex >= 0 ? categoryIndex : COLORS.length - 1;
+                                            return (
+                                                <div key={category} className="flex items-center">
+                                                    <div
+                                                        className="w-4 h-4 rounded-sm mr-2"
+                                                        style={{ backgroundColor: COLORS[colorIndex % COLORS.length] }}
+                                                    ></div>
+                                                    <span className="text-sm text-gray-300">{category}</span>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </>
                             )}
