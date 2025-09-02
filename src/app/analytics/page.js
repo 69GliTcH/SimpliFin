@@ -346,7 +346,7 @@ export default function AnalyticsPage() {
                 <circle
                     cx={cx}
                     cy={cy}
-                    r={6}
+                    r={8}
                     fill="#3b82f6"
                     stroke="#fff"
                     strokeWidth={1}
