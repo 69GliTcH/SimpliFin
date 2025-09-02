@@ -325,7 +325,7 @@ export default function Dashboard() {
                             <span className="truncate">
                                 {dateRange.start && dateRange.end
                                     ? `${dateRange.start.toLocaleDateString()} - ${dateRange.end.toLocaleDateString()}`
-                                    : "Select Date Range"}
+                                    : "Date Range Filter"}
                             </span>
                             <svg
                                 className={`w-4 h-4 transition-transform duration-200 ${showDatePicker ? "rotate-180" : ""

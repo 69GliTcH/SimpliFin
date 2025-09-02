@@ -38,8 +38,8 @@ const categoryIcons = {
     Other: <ShoppingCart className="w-5 h-5 mx-auto" />,
 };
 
-const COLORS         = ["#3b82f6","#eab308", "#22c55e", "#ef4444", "#a855f7",  "#14b8a6"];
-const ALL_CATEGORIES = ["Food","Other","Home","Subscriptions","Travel","Entertainment"];
+const COLORS = ["#3b82f6", "#eab308", "#22c55e", "#ef4444", "#a855f7", "#14b8a6"];
+const ALL_CATEGORIES = ["Food", "Other", "Home", "Subscriptions", "Travel", "Entertainment"];
 
 // Custom tooltip component for charts
 const CustomTooltip = ({ active, payload, label, chartType }) => {
@@ -60,7 +60,7 @@ const CustomTooltip = ({ active, payload, label, chartType }) => {
 
 // Date range display component
 const DateRangeDisplay = ({ start, end }) => {
-    if (!start && !end) return "All Time";
+    if (!start && !end) return "Date Range Filter";
 
     return `${start ? start.toLocaleDateString() : "Start"} - ${end ? end.toLocaleDateString() : "End"}`;
 };
@@ -199,7 +199,7 @@ export default function AnalyticsPage() {
     // Filtered Line Chart - show individual transactions
     const filteredLine = lineExpenses.filter((exp) => {
         if (lineStart && exp.createdAt < lineStart) return false;
-        if (lineEnd && exp.createdAt > lineEnd) return false;
+        if (lineEnd && exp.createdAt > pieEnd) return false;
         if (lineCategory && exp.category !== lineCategory) return false;
         return true;
     });
@@ -253,12 +253,12 @@ export default function AnalyticsPage() {
                 <circle
                     cx={cx}
                     cy={cy}
-                    r={8}
+                    r={3}
                     fill="#3b82f6"
                     stroke="#fff"
-                    strokeWidth={2}
+                    strokeWidth={1}
                     onClick={() => setSelectedTransaction(payload)}
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: 'pointer', outline: 'none' }}
                 />
             </g>
         );
@@ -342,10 +342,10 @@ export default function AnalyticsPage() {
                                         setPieStart(null);
                                         setPieEnd(null);
                                     }}
-                                    className="px-4 py-2 w-38 bg-blue-700 hover:bg-blue-900 rounded-lg text-white cursor-pointer 
+                                    className="px-4 py-2 w-52 bg-blue-700 hover:bg-blue-900 rounded-lg text-white cursor-pointer 
                                            transition focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                 >
-                                    Reset
+                                    Reset Pie Chart Filter
                                 </button>
                             </div>
 
@@ -355,8 +355,8 @@ export default function AnalyticsPage() {
                                 </div>
                             ) : (
                                 <>
-                                    <ResponsiveContainer width="100%" height={300}>
-                                        <PieChart>
+                                    <ResponsiveContainer width="100%" height={300} className="outline-none [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:outline-none">
+                                        <PieChart className="outline-none">
                                             <Pie
                                                 data={pieData}
                                                 cx="50%"
@@ -525,10 +525,10 @@ export default function AnalyticsPage() {
                                         setLineCategory("");
                                         setSelectedTransaction(null);
                                     }}
-                                    className="px-4 py-2 w-38 bg-blue-700 hover:bg-blue-900 rounded-lg text-white cursor-pointer 
+                                    className="px-4 py-2 w-52 bg-blue-700 hover:bg-blue-900 rounded-lg text-white cursor-pointer 
                                            transition focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                 >
-                                    Reset
+                                    Reset Line Chart Filters
                                 </button>
                             </div>
                             {filteredLine.length === 0 ? (
@@ -537,11 +537,12 @@ export default function AnalyticsPage() {
                                 </div>
                             ) : (
                                 <>
-                                    <ResponsiveContainer width="100%" height={300}>
+                                    <ResponsiveContainer width="100%" height={300} className="outline-none [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:outline-none">
                                         <LineChart
                                             data={lineData}
                                             margin={{ top: 20, right: 10, left: -27, bottom: 10 }}
                                             onClick={handleLineClick}
+                                            className="outline-none"
                                         >
                                             <CartesianGrid strokeDasharray="3 3" stroke="#555" />
                                             <XAxis
