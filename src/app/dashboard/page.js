@@ -303,7 +303,7 @@ export default function Dashboard() {
                     <div className="relative" ref={datePickerRef}>
                         <button
                             onClick={() => setShowDatePicker((prev) => !prev)}
-                            className="flex items-center justify-between gap-2 w-50 px-4 py-2 bg-gray-800 
+                            className="flex items-center justify-between gap-2 w-52 px-4 py-2 bg-gray-800 
                        hover:bg-gray-700 rounded-lg cursor-pointer text-white 
                        focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         >
