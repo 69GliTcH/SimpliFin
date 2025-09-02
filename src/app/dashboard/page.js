@@ -323,7 +323,7 @@ export default function Dashboard() {
                             </svg>
                         </button>
                         {showDatePicker && (
-                            <div className="absolute mt-2 z-50bg-gray-900/70 backdrop-blur-md border border-white/10 p-3 rounded-lg shadow-lg left-[-35]">
+                            <div className="absolute mt-2 z-50 bg-gray-900/70 backdrop-blur-md border border-white/10 p-3 rounded-lg shadow-lg left-[-35]">
                                 <DatePicker
                                     selected={dateRange.start}
                                     onChange={(dates) => {
