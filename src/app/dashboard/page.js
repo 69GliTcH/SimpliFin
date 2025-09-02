@@ -323,7 +323,7 @@ export default function Dashboard() {
                             </svg>
                         </button>
                         {showDatePicker && (
-                            <div className="absolute mt-2 z-50 bg-red-900/70 backdrop-blur-md border border-white/10 p-3 rounded-lg shadow-lg left-[-30]">
+                            <div className="absolute mt-2 z-50 bg-gray-900/70 backdrop-blur-md border border-white/10 p-3 rounded-lg shadow-lg left-[-30]">
                                 <DatePicker
                                     selected={dateRange.start}
                                     onChange={(dates) => {
@@ -344,9 +344,11 @@ export default function Dashboard() {
                     <div className="relative" ref={categoryRef}>
                         <button
                             onClick={() => setShowCategory((prev) => !prev)}
-                            className="flex items-center justify-between gap-2 w-52 px-4 py-2 bg-gray-800 
-                       hover:bg-gray-700 rounded-lg cursor-pointer text-white 
-                       focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            className="flex items-center justify-between w-52 px-4 py-2 
+                        bg-gray-800 
+                        hover:bg-gray-700
+                rounded-lg cursor-pointer text-white 
+                focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         >
                             <span className="truncate">
                                 {categoryFilter ? categoryFilter : "All Categories"}
@@ -371,24 +373,35 @@ export default function Dashboard() {
                                     className="absolute left-0 mt-2 w-52 p-2 rounded-xl shadow-lg z-50
                    bg-gray-900/70 backdrop-blur-md border border-white/10"
                                 >
+                                    {/* All Categories */}
                                     <li
-                                        className="px-3 py-2 rounded-md cursor-pointer text-white/90 hover:bg-gray-800/60 transition"
+                                        className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer 
+                     text-white/90 hover:bg-gray-800/60 transition"
                                         onClick={() => {
                                             setCategoryFilter("");
                                             setShowCategory(false);
                                         }}
                                     >
+                                        <span className="w-5 h-5 flex items-center justify-center">
+                                            📊
+                                        </span>
                                         All Categories
                                     </li>
+
+                                    {/* Dynamic Categories */}
                                     {Object.keys(categoryIcons).map((c) => (
                                         <li
                                             key={c}
-                                            className="px-3 py-2 rounded-md cursor-pointer text-white/90 hover:bg-gray-800/60 transition"
+                                            className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer 
+                       text-white/90 hover:bg-gray-800/60 transition"
                                             onClick={() => {
                                                 setCategoryFilter(c);
                                                 setShowCategory(false);
                                             }}
                                         >
+                                            <span className="w-5 h-5 flex items-center justify-center">
+                                                {categoryIcons[c]}
+                                            </span>
                                             {c}
                                         </li>
                                     ))}
@@ -396,6 +409,7 @@ export default function Dashboard() {
                             )}
                         </AnimatePresence>
                     </div>
+
 
 
                     {/* Reset Filters */}
