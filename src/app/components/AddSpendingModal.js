@@ -106,7 +106,7 @@ export default function AddSpendingModal({ open, setOpen, addSpending }) {
                                 <button
                                     type="button"
                                     onClick={() => setShowCategory((prev) => !prev)}
-                                    className="w-full flex items-center justify-between px-4 py-2 bg-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full flex items-center justify-between px-4 py-2 bg-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                                 >
                                     <span>{category}</span>
                                     <ChevronDown
@@ -123,7 +123,7 @@ export default function AddSpendingModal({ open, setOpen, addSpending }) {
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: -5 }}
                                             transition={{ duration: 0.15 }}
-                                            className="absolute left-0 mt-2 w-full bg-gray-500 rounded-lg shadow-lg z-20"
+                                            className="absolute left-0 mt-2 w-full bg-gray-900/70 backdrop-blur-md border border-white/10 rounded-lg shadow-lg z-20"
                                         >
                                             {categories.map((cat) => (
                                                 <li
