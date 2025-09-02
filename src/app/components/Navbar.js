@@ -49,7 +49,7 @@ export default function Navbar() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => router.push("/dashboard")}
-                        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-full text-white font-medium transition-all cursor-pointer"
+                        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-medium transition-all cursor-pointer"
                     >
                         Dashboard
                     </motion.button>
@@ -58,7 +58,7 @@ export default function Navbar() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => router.push("/analytics")}
-                        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-full text-white font-medium transition-all cursor-pointer"
+                        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-medium transition-all cursor-pointer"
                     >
                         Analytics
                     </motion.button>
@@ -67,7 +67,7 @@ export default function Navbar() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={handleLogout}
-                        className="px-4 py-2 bg-blue-700 hover:bg-blue-900 rounded-full text-white font-medium transition-all cursor-pointer"
+                        className="px-4 py-2 bg-blue-700 hover:bg-blue-900 rounded-lg text-white font-medium transition-all cursor-pointer"
                     >
                         Logout
                     </motion.button>

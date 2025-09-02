@@ -110,6 +110,21 @@ export default function Dashboard() {
         }
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [showDatePicker]);
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (categoryRef.current && !categoryRef.current.contains(e.target)) {
+                setShowCategory(false);
+            }
+        };
+        if (showCategory) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [showCategory]);
+
+
 
     const addSpending = async (amount, category, name) => {
         if (!user) return;
