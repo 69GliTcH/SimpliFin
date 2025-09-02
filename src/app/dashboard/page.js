@@ -303,7 +303,7 @@ export default function Dashboard() {
                     <div className="relative" ref={datePickerRef}>
                         <button
                             onClick={() => setShowDatePicker((prev) => !prev)}
-                            className="flex items-center justify-between gap-2 w-54 px-4 py-2 bg-gray-800 
+                            className="flex items-center justify-between gap-2 w-50 px-4 py-2 bg-gray-800 
                        hover:bg-gray-700 rounded-lg cursor-pointer text-white 
                        focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         >
@@ -323,7 +323,7 @@ export default function Dashboard() {
                             </svg>
                         </button>
                         {showDatePicker && (
-                            <div className="absolute mt-2 z-50 bg-gray-900 p-3 rounded-lg shadow-lg">
+                            <div className="absolute mt-2 z-50bg-gray-900/70 backdrop-blur-md border border-white/10 p-3 rounded-lg shadow-lg left-[-35]">
                                 <DatePicker
                                     selected={dateRange.start}
                                     onChange={(dates) => {
@@ -344,7 +344,7 @@ export default function Dashboard() {
                     <div className="relative" ref={categoryRef}>
                         <button
                             onClick={() => setShowCategory((prev) => !prev)}
-                            className="flex items-center justify-between w-54 px-4 py-2 bg-gray-800 
+                            className="flex items-center justify-between gap-2 w-50 px-4 py-2 bg-gray-800 
                        hover:bg-gray-700 rounded-lg cursor-pointer text-white 
                        focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         >
@@ -352,8 +352,7 @@ export default function Dashboard() {
                                 {categoryFilter ? categoryFilter : "All Categories"}
                             </span>
                             <svg
-                                className={`w-4 h-4 transition-transform duration-200 ${showCategory ? "rotate-180" : ""
-                                    }`}
+                                className={`w-4 h-4 transition-transform duration-200 ${showCategory ? "rotate-180" : ""}`}
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -361,17 +360,19 @@ export default function Dashboard() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
+
                         <AnimatePresence>
                             {showCategory && (
                                 <motion.ul
                                     initial={{ opacity: 0, y: -5 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -5 }}
-                                    transition={{ duration: 0.15 }}
-                                    className="absolute left-0 mt-2 w-40 bg-gray-500 rounded-lg shadow-lg z-50"
+                                    transition={{ duration: 0.2 }}
+                                    className="absolute left-0 mt-2 w-50 p-2 rounded-xl shadow-lg z-50
+                   bg-gray-900/70 backdrop-blur-md border border-white/10"
                                 >
                                     <li
-                                        className="px-3 py-2 hover:bg-gray-700 rounded cursor-pointer text-white"
+                                        className="px-3 py-2 rounded-md cursor-pointer text-white/90 hover:bg-gray-800/60 transition"
                                         onClick={() => {
                                             setCategoryFilter("");
                                             setShowCategory(false);
@@ -382,7 +383,7 @@ export default function Dashboard() {
                                     {Object.keys(categoryIcons).map((c) => (
                                         <li
                                             key={c}
-                                            className="px-3 py-2 hover:bg-gray-700 rounded cursor-pointer text-white"
+                                            className="px-3 py-2 rounded-md cursor-pointer text-white/90 hover:bg-gray-800/60 transition"
                                             onClick={() => {
                                                 setCategoryFilter(c);
                                                 setShowCategory(false);
@@ -394,8 +395,8 @@ export default function Dashboard() {
                                 </motion.ul>
                             )}
                         </AnimatePresence>
-
                     </div>
+
 
                     {/* Reset Filters */}
                     <button
