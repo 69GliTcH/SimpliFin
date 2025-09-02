@@ -323,7 +323,7 @@ export default function Dashboard() {
                             </svg>
                         </button>
                         {showDatePicker && (
-                            <div className="absolute mt-2 z-50 bg-gray-900/70 backdrop-blur-md border border-white/10 p-3 rounded-lg shadow-lg left-[-35]">
+                            <div className="absolute mt-2 z-50 bg-red-900/70 backdrop-blur-md border border-white/10 p-3 rounded-lg shadow-lg left-[-30]">
                                 <DatePicker
                                     selected={dateRange.start}
                                     onChange={(dates) => {
@@ -344,7 +344,7 @@ export default function Dashboard() {
                     <div className="relative" ref={categoryRef}>
                         <button
                             onClick={() => setShowCategory((prev) => !prev)}
-                            className="flex items-center justify-between gap-2 w-50 px-4 py-2 bg-gray-800 
+                            className="flex items-center justify-between gap-2 w-52 px-4 py-2 bg-gray-800 
                        hover:bg-gray-700 rounded-lg cursor-pointer text-white 
                        focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         >
@@ -368,7 +368,7 @@ export default function Dashboard() {
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -5 }}
                                     transition={{ duration: 0.2 }}
-                                    className="absolute left-0 mt-2 w-50 p-2 rounded-xl shadow-lg z-50
+                                    className="absolute left-0 mt-2 w-52 p-2 rounded-xl shadow-lg z-50
                    bg-gray-900/70 backdrop-blur-md border border-white/10"
                                 >
                                     <li
