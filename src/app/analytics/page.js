@@ -4,16 +4,13 @@ import { useEffect, useState, useRef } from "react";
 import Navbar from "../components/Navbar";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    PieChart,
-    Pie,
-    Cell,
-    Tooltip,
-    ResponsiveContainer,
     LineChart,
     Line,
     XAxis,
     YAxis,
     CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
 } from "recharts";
 import { db, auth } from "../../lib/firebase";
 import { collection, query, onSnapshot } from "firebase/firestore";
@@ -27,6 +24,8 @@ import {
     Hamburger,
     YoutubeLogo,
 } from "phosphor-react";
+import ReactECharts from 'echarts-for-react';
+import 'echarts-for-react';
 
 // Category icons mapping
 const categoryIcons = {
@@ -79,40 +78,6 @@ const DateRangeDisplay = ({ start, end }) => {
     if (!start && !end) return "Date Range Filter";
 
     return `${start ? start.toLocaleDateString() : "Start"} - ${end ? end.toLocaleDateString() : "End"}`;
-};
-
-// Custom label for pie chart (outside the chart with connecting line)
-const RenderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, value, name, index }) => {
-    const RADIAN = Math.PI / 180;
-    const radius = outerRadius * 1.3;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-    const color = CATEGORY_COLORS[name] || COLORS[index % COLORS.length];
-
-    return (
-        <g>
-            {/* Connecting line from pie to label */}
-            <line
-                x1={cx + outerRadius * Math.cos(-midAngle * RADIAN)}
-                y1={cy + outerRadius * Math.sin(-midAngle * RADIAN)}
-                x2={x}
-                y2={y}
-                stroke={color}
-                strokeWidth={1}
-            />
-            <text
-                x={x}
-                y={y}
-                fill={color}
-                textAnchor={x > cx ? 'start' : 'end'}
-                dominantBaseline="central"
-                fontSize="12"
-                fontWeight="bold"
-            >
-                {`₹${value}`}
-            </text>
-        </g>
-    );
 };
 
 export default function AnalyticsPage() {
@@ -193,23 +158,82 @@ export default function AnalyticsPage() {
         return true;
     });
 
-    // Fix: Ensure consistent category naming
+    // Prepare data for ECharts pie chart
     const pieData = ALL_CATEGORIES.map(category => {
         const total = filteredPie
             .filter(exp => (exp.category || "Other") === category)
             .reduce((sum, exp) => sum + Number(exp.amount), 0);
         
         return {
-            name: category,
             value: total,
-            icon: categoryIcons[category] || categoryIcons.Other
+            name: category,
+            itemStyle: { color: CATEGORY_COLORS[category] || "#3b82f6" }
         };
     }).filter(item => item.value > 0);
+
+    // ECharts options for the square pie chart with responsive labels
+    const getPieChartOption = () => {
+        return {
+            tooltip: {
+                trigger: 'item',
+                formatter: '{a} <br/>{b}: ₹{c} ({d}%)',
+                backgroundColor: 'rgba(31, 41, 55, 0.8)',
+                borderColor: 'rgba(55, 65, 81, 1)',
+                textStyle: { color: '#fff' }
+            },
+            legend: {
+                show: false
+            },
+            series: [
+                {
+                    name: 'Spending',
+                    type: 'pie',
+                    radius: isMobile ? ['50%', '70%'] : ['40%', '70%'],
+                    avoidLabelOverlap: true,
+                    itemStyle: {
+                        borderRadius: 10,
+                        borderColor: '#1a1a1a',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: true,
+                        formatter: '₹{c}',
+                        color: '#fff',
+                        fontWeight: 'bold',
+                        fontSize: isMobile ? 12 : 14,
+                        position: 'outside',
+                        alignTo: 'edge',
+                        margin: isMobile ? 10 : 20,
+                        minMargin: 5,
+                        edgeDistance: isMobile ? 5 : 10,
+                        bleedMargin: isMobile ? 5 : 10
+                    },
+                    labelLine: {
+                        show: true,
+                        length: isMobile ? 10 : 15,
+                        length2: isMobile ? 5 : 10,
+                        smooth: true,
+                        lineStyle: {
+                            width: 1.5
+                        }
+                    },
+                    emphasis: {
+                        label: {
+                            show: true,
+                            fontSize: isMobile ? 14 : 16,
+                            fontWeight: 'bold'
+                        }
+                    },
+                    data: pieData
+                }
+            ]
+        };
+    };
 
     // Filtered Line Chart - show individual transactions
     const filteredLine = lineExpenses.filter((exp) => {
         if (lineStart && exp.createdAt < lineStart) return false;
-        if (lineEnd && exp.createdAt > lineEnd) return false; // FIXED: Changed pieEnd to lineEnd
+        if (lineEnd && exp.createdAt > lineEnd) return false;
         if (lineCategory && exp.category !== lineCategory) return false;
         return true;
     });
@@ -346,7 +370,7 @@ export default function AnalyticsPage() {
                 <circle
                     cx={cx}
                     cy={cy}
-                    r={8}
+                    r={6}
                     fill="#3b82f6"
                     stroke="#fff"
                     strokeWidth={1}
@@ -448,27 +472,20 @@ export default function AnalyticsPage() {
                                 </div>
                             ) : (
                                 <>
-                                    <ResponsiveContainer width="100%" height={300} className="outline-none [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:outline-none">
-                                        <PieChart className="outline-none">
-                                            <Pie
-                                                data={pieData}
-                                                cx="50%"
-                                                cy="50%"
-                                                outerRadius={isMobile ? 100 : 100}
-                                                dataKey="value"
-                                                labelLine={false}
-                                                label={(props) => <RenderCustomizedLabel {...props} />}
-                                            >
-                                                {pieData.map((entry, index) => (
-                                                    <Cell 
-                                                        key={`cell-${index}`} 
-                                                        fill={CATEGORY_COLORS[entry.name] || COLORS[index % COLORS.length]} 
-                                                    />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip formatter={(value) => `₹${value}`} />
-                                        </PieChart>
-                                    </ResponsiveContainer>
+                                    {/* Square Pie Chart Container */}
+                                    <div className="square-pie-container bg-gray-700/30 rounded-xl p-4 border border-gray-600/30 mb-4 flex justify-center items-center">
+                                        <ReactECharts
+                                            option={getPieChartOption()}
+                                            style={{ height: isMobile ? '280px' : '300px', width: '100%' }}
+                                            opts={{ renderer: 'svg' }}
+                                            onEvents={{
+                                                resize: () => {
+                                                    // Force re-render on resize to update mobile detection
+                                                    setIsMobile(window.innerWidth < 768);
+                                                }
+                                            }}
+                                        />
+                                    </div>
 
                                     {/* Color-coded category legend (ALWAYS SHOW ALL CATEGORIES) */}
                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-4">
