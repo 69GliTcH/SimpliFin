@@ -129,20 +129,21 @@ export default function Dashboard() {
 
 
 
-    const addSpending = async (amount, category, name) => {
-        if (!user) return;
-        try {
-            await addDoc(collection(db, "users", user.uid, "spendings"), {
-                amount,
-                category,
-                name,
-                createdAt: new Date(),
-            });
-            toast.success("Spending added!");
-        } catch {
-            toast.error("Failed to add spending!");
-        }
-    };
+    // Update the addSpending function to accept and use the date parameter
+    const addSpending = async (amount, category, name, createdAt) => {
+    if (!user) return;
+    try {
+        await addDoc(collection(db, "users", user.uid, "spendings"), {
+            amount,
+            category,
+            name,
+            createdAt: new Date(createdAt), // Convert ISO string back to Date object
+        });
+        toast.success("Spending added!");
+    } catch {
+        toast.error("Failed to add spending!");
+    }
+};
 
     const confirmDelete = (spending) => setDeleteTarget(spending);
 
