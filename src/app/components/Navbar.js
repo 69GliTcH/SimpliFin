@@ -53,7 +53,7 @@ export default function Navbar() {
             initial={{ y: -80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ type: "spring", stiffness: 100, damping: 20 }}
-            className="bg-gray-900 p-4 shadow-md sticky top-0 z-50"
+            className="bg-gray-800 p-4 shadow-md sticky top-0 z-50"
         >
             <div className="flex items-center justify-between">
                 {/* Left side - user info */}

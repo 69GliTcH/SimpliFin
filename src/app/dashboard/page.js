@@ -241,126 +241,126 @@ export default function Dashboard() {
     }, [filteredTotal]);
 
     const downloadCSV = () => {
-    const csvContent = [
-        ["Name", "Amount (INR)", "Category", "Date"],
-        ...filteredSpendings.map(s => [
-            s.name,
-            s.amount,
-            s.category,
-            formatDate(s.createdAt?.toDate ? s.createdAt.toDate() : new Date(s.createdAt))
-        ])
-    ].map(e => e.join(",")).join("\n");
+        const csvContent = [
+            ["Name", "Amount (INR)", "Category", "Date"],
+            ...filteredSpendings.map(s => [
+                s.name,
+                s.amount,
+                s.category,
+                formatDate(s.createdAt?.toDate ? s.createdAt.toDate() : new Date(s.createdAt))
+            ])
+        ].map(e => e.join(",")).join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `spendings_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setDownloadOpen(false);
-    toast.success("CSV downloaded successfully!");
-};
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `spendings_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setDownloadOpen(false);
+        toast.success("CSV downloaded successfully!");
+    };
 
     const downloadPDF = () => {
-    const doc = new jsPDF();
-    
-    // Header
-    doc.setFontSize(20);
-    doc.setTextColor(40, 40, 40);
-    doc.text("Spending Report", 105, 20, { align: "center" });
-    
-    // Filters info
-    doc.setFontSize(12);
-    doc.setTextColor(100, 100, 100);
-    
-    const dateRangeText = dateRange.start && dateRange.end 
-        ? `${dateRange.start.toLocaleDateString()} - ${dateRange.end.toLocaleDateString()}`
-        : "All Time";
-    
-    const categoryText = categoryFilter ? categoryFilter : "All Categories";
-    
-    doc.text(`Date Range: ${dateRangeText}`, 14, 35);
-    doc.text(`Category: ${categoryText}`, 14, 42);
-    doc.text(`Total Transactions: ${filteredCount}`, 14, 49);
-    doc.text(`Total Amount: INR ${filteredTotal}`, 14, 56);
-    
-    // Table header
-    doc.setFontSize(12);
-    doc.setTextColor(255, 255, 255);
-    doc.setFillColor(59, 130, 246);
-    doc.rect(14, 65, 182, 10, 'F');
-    doc.text("#", 20, 71);
-    doc.text("Name", 30, 71);
-    doc.text("Amount (INR)", 100, 71);
-    doc.text("Category", 130, 71);
-    doc.text("Date", 170, 71);
-    
-    // Table data
-    let yPosition = 75;
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0);
-    
-    filteredSpendings.forEach((s, index) => {
-        if (yPosition > 270) {
-            doc.addPage();
-            yPosition = 20;
-            // Add header to new page
-            doc.setFontSize(12);
-            doc.setTextColor(255, 255, 255);
-            doc.setFillColor(59, 130, 246);
-            doc.rect(14, 20, 182, 10, 'F');
-            doc.text("#", 20, 26);
-            doc.text("Name", 30, 26);
-            doc.text("Amount (INR)", 100, 26);
-            doc.text("Category", 130, 26);
-            doc.text("Date", 170, 26);
-            yPosition = 30;
-            doc.setFontSize(10);
-            doc.setTextColor(0, 0, 0);
-        }
-        
-        // Alternate row colors
-        if (index % 2 === 0) {
-            doc.setFillColor(240, 240, 240);
-        } else {
-            doc.setFillColor(255, 255, 255);
-        }
-        doc.rect(14, yPosition, 182, 8, 'F');
-        
-        doc.text((index + 1).toString(), 20, yPosition + 5);
-        
-        // Truncate long names
-        const name = s.name.length > 20 ? s.name.substring(0, 17) + "..." : s.name;
-        doc.text(name, 30, yPosition + 5);
-        
-        doc.text(s.amount.toString(), 100, yPosition + 5);
-        
-        // Truncate long categories
-        const category = s.category.length > 12 ? s.category.substring(0, 9) + "..." : s.category;
-        doc.text(category, 130, yPosition + 5);
-        
-        doc.text(formatDate(s.createdAt?.toDate ? s.createdAt.toDate() : new Date(s.createdAt)), 170, yPosition + 5);
-        
-        yPosition += 8;
-    });
-    
-    // Footer on each page
-    const pageCount = doc.internal.getNumberOfPages();
-    for(let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(10);
+        const doc = new jsPDF();
+
+        // Header
+        doc.setFontSize(20);
+        doc.setTextColor(40, 40, 40);
+        doc.text("Spending Report", 105, 20, { align: "center" });
+
+        // Filters info
+        doc.setFontSize(12);
         doc.setTextColor(100, 100, 100);
-        doc.text("© 2025 SimplyFin. Developer's Credit: Saksham Verma. All rights reserved.", 
+
+        const dateRangeText = dateRange.start && dateRange.end
+            ? `${dateRange.start.toLocaleDateString()} - ${dateRange.end.toLocaleDateString()}`
+            : "All Time";
+
+        const categoryText = categoryFilter ? categoryFilter : "All Categories";
+
+        doc.text(`Date Range: ${dateRangeText}`, 14, 35);
+        doc.text(`Category: ${categoryText}`, 14, 42);
+        doc.text(`Total Transactions: ${filteredCount}`, 14, 49);
+        doc.text(`Total Amount: INR ${filteredTotal}`, 14, 56);
+
+        // Table header
+        doc.setFontSize(12);
+        doc.setTextColor(255, 255, 255);
+        doc.setFillColor(59, 130, 246);
+        doc.rect(14, 65, 182, 10, 'F');
+        doc.text("#", 20, 71);
+        doc.text("Name", 30, 71);
+        doc.text("Amount (INR)", 100, 71);
+        doc.text("Category", 130, 71);
+        doc.text("Date", 170, 71);
+
+        // Table data
+        let yPosition = 75;
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+
+        filteredSpendings.forEach((s, index) => {
+            if (yPosition > 270) {
+                doc.addPage();
+                yPosition = 20;
+                // Add header to new page
+                doc.setFontSize(12);
+                doc.setTextColor(255, 255, 255);
+                doc.setFillColor(59, 130, 246);
+                doc.rect(14, 20, 182, 10, 'F');
+                doc.text("#", 20, 26);
+                doc.text("Name", 30, 26);
+                doc.text("Amount (INR)", 100, 26);
+                doc.text("Category", 130, 26);
+                doc.text("Date", 170, 26);
+                yPosition = 30;
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+            }
+
+            // Alternate row colors
+            if (index % 2 === 0) {
+                doc.setFillColor(240, 240, 240);
+            } else {
+                doc.setFillColor(255, 255, 255);
+            }
+            doc.rect(14, yPosition, 182, 8, 'F');
+
+            doc.text((index + 1).toString(), 20, yPosition + 5);
+
+            // Truncate long names
+            const name = s.name.length > 20 ? s.name.substring(0, 17) + "..." : s.name;
+            doc.text(name, 30, yPosition + 5);
+
+            doc.text(s.amount.toString(), 100, yPosition + 5);
+
+            // Truncate long categories
+            const category = s.category.length > 12 ? s.category.substring(0, 9) + "..." : s.category;
+            doc.text(category, 130, yPosition + 5);
+
+            doc.text(formatDate(s.createdAt?.toDate ? s.createdAt.toDate() : new Date(s.createdAt)), 170, yPosition + 5);
+
+            yPosition += 8;
+        });
+
+        // Footer on each page
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(10);
+            doc.setTextColor(100, 100, 100);
+            doc.text("© 2025 SimplyFin. Developer's Credit: Saksham Verma. All rights reserved.",
                 105, doc.internal.pageSize.height - 10, { align: "center" });
-    }
-    
-    doc.save(`spendings_report_${new Date().toISOString().split('T')[0]}.pdf`);
-    setDownloadOpen(false);
-    toast.success("PDF downloaded successfully!");
-};
+        }
+
+        doc.save(`spendings_report_${new Date().toISOString().split('T')[0]}.pdf`);
+        setDownloadOpen(false);
+        toast.success("PDF downloaded successfully!");
+    };
 
     return (
         <div className="min-h-screen bg-gray-900 text-gray-100">
@@ -757,40 +757,57 @@ export default function Dashboard() {
             <AnimatePresence>
                 {downloadOpen && (
                     <motion.div
-                        className="fixed inset-0 bg-opacity-30 backdrop-blur-sm flex items-center justify-center z-50 backdrop-blur-sm"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
+                        className="fixed inset-0  bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm p-4"
                     >
                         <motion.div
-                            className="bg-gray-800 bg-opacity-70 backdrop-blur-md p-6 rounded-xl space-y-4 w-full max-w-md border border-white/10"
-                            initial={{ scale: 0.8 }}
-                            animate={{ scale: 1 }}
-                            exit={{ scale: 0.8 }}
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="bg-gray-800 p-6 rounded-xl w-full max-w-sm shadow-lg mx-auto border border-gray-600"
                         >
-                            <h2 className="text-lg font-semibold text-white text-center">
+                            <h2 className="text-xl font-semibold mb-5 text-white text-center">
                                 Download Data
                             </h2>
 
                             {/* Filters info */}
-                            <div className="bg-gray-900/50 p-4 rounded-lg">
-                                <p className="text-sm text-gray-300 text-center mb-2">Current Filters:</p>
-                                <div className="text-xs text-gray-400 space-y-1">
-                                    <p>Date Range: {dateRange.start && dateRange.end
-                                        ? `${dateRange.start.toLocaleDateString()} - ${dateRange.end.toLocaleDateString()}`
-                                        : "All Time"}</p>
-                                    <p>Category: {categoryFilter || "All Categories"}</p>
-                                    <p>Transactions: {filteredCount} items</p>
-                                    <p>Total Amount: ₹{filteredTotal}</p>
+                            <div className="bg-gray-700 p-4 rounded-lg mb-5 border border-gray-600">
+                                <p className="text-sm text-gray-300 text-center mb-3">Current Filters:</p>
+                                <div className="text-sm space-y-2">
+                                    <div className="flex justify-between items-center py-2 border-b border-gray-600 last:border-b-0">
+                                        <span className="text-gray-300">Date Range:</span>
+                                        <span className="text-gray-100 font-medium">
+                                            {dateRange.start && dateRange.end
+                                                ? `${dateRange.start.toLocaleDateString()} - ${dateRange.end.toLocaleDateString()}`
+                                                : "All Time"}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-2 border-b border-gray-600 last:border-b-0">
+                                        <span className="text-gray-300">Category:</span>
+                                        <span className="text-gray-100 font-medium">{categoryFilter || "All Categories"}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-2 border-b border-gray-600 last:border-b-0">
+                                        <span className="text-gray-300">Transactions:</span>
+                                        <span className="text-gray-100 font-medium">{filteredCount} items</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-2">
+                                        <span className="text-gray-300">Total Amount:</span>
+                                        <span className="text-gray-100 font-medium">₹{filteredTotal}</span>
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Download buttons */}
-                            <div className="flex justify-center gap-4 mt-4">
+                            <div className="flex justify-center gap-3 mb-5">
                                 <button
                                     onClick={downloadPDF}
-                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white cursor-pointer 
-                                            transition focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm flex items-center gap-2"
+                                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white cursor-pointer 
+                                focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-2
+                                transform hover:scale-105 active:scale-95 transition duration-150 ease-in-out
+                                border border-blue-500"
                                 >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -799,8 +816,10 @@ export default function Dashboard() {
                                 </button>
                                 <button
                                     onClick={downloadCSV}
-                                    className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white cursor-pointer 
-                                            transition focus:outline-none focus:ring-2 focus:ring-green-500 text-sm flex items-center gap-2"
+                                    className="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white cursor-pointer 
+                                focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center gap-2
+                                transform hover:scale-105 active:scale-95 transition duration-150 ease-in-out
+                                border border-green-500"
                                 >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -810,11 +829,13 @@ export default function Dashboard() {
                             </div>
 
                             {/* Close button */}
-                            <div className="flex justify-center mt-4">
+                            <div className="flex justify-center">
                                 <button
                                     onClick={() => setDownloadOpen(false)}
-                                    className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-white cursor-pointer 
-                                            transition focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm"
+                                    className="px-6 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-white cursor-pointer 
+                                focus:outline-none focus:ring-2 focus:ring-gray-500
+                                transform hover:scale-105 active:scale-95 transition duration-150 ease-in-out
+                                border border-gray-500"
                                 >
                                     Cancel
                                 </button>
@@ -824,57 +845,69 @@ export default function Dashboard() {
                 )}
             </AnimatePresence>
 
+
             {/* Delete Confirmation Modal */}
             <AnimatePresence>
                 {deleteTarget && (
                     <motion.div
-                        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm p-4"
                     >
                         <motion.div
-                            className="bg-gray-800 p-6 rounded-xl space-y-4 w-full max-w-md"
-                            initial={{ scale: 0.8 }}
-                            animate={{ scale: 1 }}
-                            exit={{ scale: 0.8 }}
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="bg-gray-800 p-6 rounded-xl w-full max-w-sm shadow-lg mx-auto border border-gray-600"
                         >
-                            <h2 className="text-lg font-semibold text-white text-center">
+                            <h2 className="text-xl font-semibold mb-5 text-white text-center">
                                 Confirm Delete
                             </h2>
 
-                            {/* Mini Card for Info (no delete button) */}
-                            <div className="flex flex-col gap-2 overflow-hidden rounded-lg bg-gray-900 shadow-md p-4">
-                                <div className="flex justify-between items-center">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-2xl">{categoryIcons[deleteTarget.category]}</span>
-                                        <span className="font-semibold text-white text-lg truncate">{deleteTarget.name}</span>
+                            {/* Mini Card for Info */}
+                            <div className="bg-gray-700 p-4 rounded-lg mb-5 border border-gray-600">
+                                <p className="text-sm text-gray-300 text-center mb-3">Spending Details:</p>
+                                <div className="text-sm space-y-2">
+                                    <div className="flex justify-between items-center py-2 border-b border-gray-600">
+                                        <span className="text-gray-300">Name:</span>
+                                        <span className="text-gray-100 font-medium">{deleteTarget.name}</span>
                                     </div>
-                                    <div className="text-white font-bold text-lg">
-                                        ₹{deleteTarget.amount}
+                                    <div className="flex justify-between items-center py-2 border-b border-gray-600">
+                                        <span className="text-gray-300">Amount:</span>
+                                        <span className="text-gray-100 font-medium">₹{deleteTarget.amount}</span>
                                     </div>
-                                </div>
-                                <div className="flex justify-between text-gray-300 text-sm">
-                                    <span className="capitalize">{deleteTarget.category}</span>
-                                    <span>{formatDate(deleteTarget.createdAt)}</span>
+                                    <div className="flex justify-between items-center py-2 border-b border-gray-600">
+                                        <span className="text-gray-300">Category:</span>
+                                        <span className="text-gray-100 font-medium capitalize">{deleteTarget.category}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-2">
+                                        <span className="text-gray-300">Date:</span>
+                                        <span className="text-gray-100 font-medium">
+                                            {formatDate(deleteTarget.createdAt?.toDate ? deleteTarget.createdAt.toDate() : deleteTarget.createdAt)}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Confirmation Buttons */}
-                            <div className="flex justify-center gap-4 mt-4">
+                            <div className="flex justify-center gap-3">
                                 <button
                                     onClick={handleDelete}
-                                    className="px-4 py-2 bg-rose-800 rounded-lg hover:bg-rose-600 text-white
-                                    cursor-pointer transform hover:scale-105 active:scale-95 
-               transition duration-150 ease-in-out"
+                                    className="px-6 py-2 bg-rose-600 hover:bg-rose-700 rounded-lg text-white cursor-pointer 
+                                focus:outline-none focus:ring-2 focus:ring-rose-500
+                                transform hover:scale-105 active:scale-95 transition duration-150 ease-in-out
+                                border border-rose-500"
                                 >
                                     Yes
                                 </button>
                                 <button
                                     onClick={() => setDeleteTarget(null)}
-                                    className="px-4 py-2 bg-gray-600 rounded-lg hover:bg-gray-500 text-white
-                                    cursor-pointer transform hover:scale-105 active:scale-95 
-               transition duration-150 ease-in-out"
+                                    className="px-6 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-white cursor-pointer 
+                                focus:outline-none focus:ring-2 focus:ring-gray-500
+                                transform hover:scale-105 active:scale-95 transition duration-150 ease-in-out
+                                border border-gray-500"
                                 >
                                     No
                                 </button>
