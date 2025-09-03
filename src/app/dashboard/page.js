@@ -767,14 +767,14 @@ export default function Dashboard() {
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
                             transition={{ duration: 0.2 }}
-                            className="bg-gray-800 p-6 rounded-xl w-full max-w-sm shadow-lg mx-auto border border-gray-600"
+                            className="bg-gray-900 p-6 rounded-xl w-full max-w-sm shadow-lg mx-auto border border-gray-600"
                         >
                             <h2 className="text-xl font-semibold mb-5 text-white text-center">
                                 Download Data
                             </h2>
 
                             {/* Filters info */}
-                            <div className="bg-gray-700 p-4 rounded-lg mb-5 border border-gray-600">
+                            <div className="bg-gray-800 p-4 rounded-lg mb-5 border border-gray-600">
                                 <p className="text-sm text-gray-300 text-center mb-3">Current Filters:</p>
                                 <div className="text-sm space-y-2">
                                     <div className="flex justify-between items-center py-2 border-b border-gray-600 last:border-b-0">
@@ -860,14 +860,14 @@ export default function Dashboard() {
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
                             transition={{ duration: 0.2 }}
-                            className="bg-gray-800 p-6 rounded-xl w-full max-w-sm shadow-lg mx-auto border border-gray-600"
+                            className="bg-gray-900 p-6 rounded-xl w-full max-w-sm shadow-lg mx-auto border border-gray-600"
                         >
                             <h2 className="text-xl font-semibold mb-5 text-white text-center">
                                 Confirm Delete
                             </h2>
 
                             {/* Mini Card for Info */}
-                            <div className="bg-gray-700 p-4 rounded-lg mb-5 border border-gray-600">
+                            <div className="bg-gray-800 p-4 rounded-lg mb-5 border border-gray-600">
                                 <p className="text-sm text-gray-300 text-center mb-3">Spending Details:</p>
                                 <div className="text-sm space-y-2">
                                     <div className="flex justify-between items-center py-2 border-b border-gray-600">

@@ -61,7 +61,7 @@ export default function AddSpendingModal({ open, setOpen, addSpending }) {
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.9, opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="bg-gray-800 p-6 rounded-xl w-full max-w-sm shadow-lg mx-auto"
+                        className="bg-gray-900 p-6 rounded-xl w-full max-w-sm shadow-lg mx-auto"
                     >
                         <h2 className="text-xl font-semibold mb-5 text-white text-center">
                             Add New Spending
