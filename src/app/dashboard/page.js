@@ -920,7 +920,7 @@ export default function Dashboard() {
             <footer className="w-full py-6 bg-gray-900 text-center">
                 <p className="text-gray-500 text-sm">
                     &copy; 2025 SimplyFin.<br />
-                    Developer&apos;s Credit: <span className="font-semibold">Saksham Verma</span>.<br />
+                    
                     All rights reserved.
                 </p>
             </footer>
