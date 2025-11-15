@@ -119,7 +119,7 @@ export default function LoginPage() {
 
             <p className="text-gray-500 mt-12 text-sm text-center">
                 &copy; 2025 SimplyFin.<br />
-                Developer&apos;s Credit: <span className="font-semibold">Saksham Verma</span>.<br />
+                
                 All rights reserved.
             </p>
         </div>
